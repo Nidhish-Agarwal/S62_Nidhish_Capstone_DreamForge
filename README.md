@@ -153,3 +153,7 @@ Additionally, the platform groups similar dreams together through unsupervised c
 DreamForge is designed to bridge the gap between subjective dream experiences and actionable insights, making it easier for users to understand and reflect on their subconscious. By combining basic/advanced input options, robust AI analysis, and interactive visualizations, the platform offers both casual users and power users a unique window into the world of dreams. The capstone journey is carefully planned to build the project step-by-step, ensuring a well-rounded and robust final product.
 
 ---
+
+### Backend Render Deployment Link:
+
+https://s62-nidhish-capstone-dreamforge.onrender.com
