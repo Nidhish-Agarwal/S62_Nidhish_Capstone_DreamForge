@@ -1,6 +1,5 @@
-if (process.env.NODE_ENV !== "PRODUCTION") {
-  require("dotenv").config();
-}
+// if (process.env.NODE_ENV !== "PRODUCTION") {
+require("dotenv").config();
 
 const connectDatabase = require("./DB/database.js");
 const PORT = process.env.PORT;
