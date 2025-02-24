@@ -1,8 +1,6 @@
 const path = require("path");
 
-// if (process.env.NODE_ENV !== "PRODUCTION") {
 require("dotenv").config();
-// }
 
 const mongoose = require("mongoose");
 
