@@ -1,4 +1,3 @@
-// if (process.env.NODE_ENV !== "PRODUCTION") {
 require("dotenv").config();
 
 const connectDatabase = require("./DB/database.js");
