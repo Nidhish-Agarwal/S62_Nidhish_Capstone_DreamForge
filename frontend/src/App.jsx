@@ -10,6 +10,7 @@ import RequireAuth from "./components/RequireAuth";
 import MainLayout from "./layouts/MainLayout";
 import LandingPage from "./Pages/LandingPage";
 import ProfilePage from "./Pages/ProfilePage";
+import MyDreamsPage from "./Pages/MyDreamsPage";
 
 function App() {
   return (
@@ -36,6 +37,14 @@ function App() {
               element={
                 <MainLayout>
                   <ProfilePage />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/mydreams"
+              element={
+                <MainLayout>
+                  <MyDreamsPage />
                 </MainLayout>
               }
             />
