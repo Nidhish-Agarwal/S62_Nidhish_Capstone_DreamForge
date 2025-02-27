@@ -66,3 +66,27 @@
     @apply bg-background text-foreground;
   }
 }
+
+
+
+/* Width of the scrollbar */
+::-webkit-scrollbar {
+  width: 10px; /* Adjust thickness */
+}
+
+/* Track (the background) */
+::-webkit-scrollbar-track {
+  background: #1e1e1e; /* Dark background for contrast */
+  border-radius: 10px;
+}
+
+/* Handle (the draggable part) */
+::-webkit-scrollbar-thumb {
+  background: #b3b3b3; /* Light gray for visibility */
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0; /* Slightly darker for better interaction */
+}
