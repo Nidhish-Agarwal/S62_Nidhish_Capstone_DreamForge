@@ -15,11 +15,13 @@ const {
   loginUser,
   fetchAllUsers,
   handleLogout,
+  fetchUserData,
 } = require("../controllers/user.controller.js");
 
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
 router.get("/", verifyJWT, verifyRoles(ROLES_LIST.Admin), fetchAllUsers);
 router.get("/logout", handleLogout);
+router.get("/get_user_data", verifyJWT, fetchUserData);
 
 module.exports = router;

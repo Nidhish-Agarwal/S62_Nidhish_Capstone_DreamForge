@@ -186,4 +186,27 @@ const handleLogout = async (req, res) => {
   return res.sendStatus(204);
 };
 
-module.exports = { registerUser, loginUser, fetchAllUsers, handleLogout };
+const fetchUserData = async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId)
+      return res.status(400).json({ message: "User ID is required" });
+
+    const foundUser = await User.findById(userId).lean(); // Optimize with `.lean()`
+
+    if (!foundUser) return res.status(404).json({ message: "User not found" });
+
+    return res.status(200).json({ user: foundUser });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  fetchAllUsers,
+  handleLogout,
+  fetchUserData,
+};

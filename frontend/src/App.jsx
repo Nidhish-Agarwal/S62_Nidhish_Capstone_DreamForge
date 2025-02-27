@@ -9,6 +9,7 @@ import PersistLogin from "./components/PersistLogin";
 import RequireAuth from "./components/RequireAuth";
 import MainLayout from "./layouts/MainLayout";
 import LandingPage from "./Pages/LandingPage";
+import ProfilePage from "./Pages/ProfilePage";
 
 function App() {
   return (
@@ -27,6 +28,14 @@ function App() {
               element={
                 <MainLayout>
                   <Dashboard />
+                </MainLayout>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <MainLayout>
+                  <ProfilePage />
                 </MainLayout>
               }
             />
