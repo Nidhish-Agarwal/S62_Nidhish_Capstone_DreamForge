@@ -11,6 +11,7 @@ import MainLayout from "./layouts/MainLayout";
 import LandingPage from "./Pages/LandingPage";
 import ProfilePage from "./Pages/ProfilePage";
 import MyDreamsPage from "./Pages/MyDreamsPage";
+import { Toaster } from "sonner";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
               path="/dashboard"
               element={
                 <MainLayout>
+                  <Toaster position="bottom-right" richColors />
                   <Dashboard />
                 </MainLayout>
               }
