@@ -38,6 +38,7 @@ function App() {
               path="/profile"
               element={
                 <MainLayout>
+                  <Toaster position="bottom-right" richColors />
                   <ProfilePage />
                 </MainLayout>
               }

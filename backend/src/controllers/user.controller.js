@@ -203,10 +203,32 @@ const fetchUserData = async (req, res) => {
   }
 };
 
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.userId;
+    if (!userId)
+      return res.status(400).json({ message: "User ID is required" });
+
+    const { username, bio, profilePicture } = req.body;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { username, bio, profilePicture },
+      { new: true }
+    );
+
+    res.status(200).json({ user: updatedUser });
+  } catch (er) {
+    console.error("Error updating the data", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   fetchAllUsers,
   handleLogout,
   fetchUserData,
+  updateUserProfile,
 };
