@@ -13,6 +13,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use(cors(corsOptions));
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/user", userRouter);
 app.use("/refresh", tokenRouter);
