@@ -206,21 +206,34 @@ const fetchUserData = async (req, res) => {
 const updateUserProfile = async (req, res) => {
   try {
     const userId = req.userId;
-    if (!userId)
-      return res.status(400).json({ message: "User ID is required" });
+    const { username, bio } = req.body;
 
-    const { username, bio, profilePicture } = req.body;
+    const updateData = {
+      username: username?.trim(),
+      bio: bio?.trim(),
+      profileImage: req.cloudinaryResult?.secure_url || req.body.profileImage,
+    };
 
-    const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { username, bio, profilePicture },
-      { new: true }
-    );
+    // Handle profile picture deletion
+    if (req.body.profileImage === "") {
+      updateData.profileImage = "";
+    }
 
-    res.status(200).json({ user: updatedUser });
-  } catch (er) {
-    console.error("Error updating the data", err);
-    return res.status(500).json({ message: "Internal server error" });
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      success: true,
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    res.status(500).json({
+      success: false,
+      message: err.message || "Internal server error",
+    });
   }
 };
 

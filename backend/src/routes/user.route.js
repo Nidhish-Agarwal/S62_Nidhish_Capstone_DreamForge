@@ -18,12 +18,15 @@ const {
   fetchUserData,
   updateUserProfile,
 } = require("../controllers/user.controller.js");
+const {
+  handleProfilePictureUpload,
+} = require("../middlewares/uploadMiddleware.js");
 
 router.post("/signup", registerUser);
 router.post("/login", loginUser);
 router.get("/", verifyJWT, verifyRoles(ROLES_LIST.Admin), fetchAllUsers);
 router.get("/logout", handleLogout);
 router.get("/get_user_data", verifyJWT, fetchUserData);
-router.put("/update", verifyJWT, updateUserProfile);
+router.put("/update", verifyJWT, handleProfilePictureUpload, updateUserProfile);
 
 module.exports = router;
