@@ -41,16 +41,12 @@ const processedDreamSchema = new mongoose.Schema(
       trim: true,
       default: "", // Optional field
     },
-    video_prompt: {
-      type: String,
-      trim: true,
-      default: "", // Optional field
-    },
     analysis_version: {
       type: String,
       required: true,
       trim: true,
     },
+    processed_at: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

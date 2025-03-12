@@ -74,6 +74,11 @@
   width: 10px; /* Adjust thickness */
 }
 
+/* Horizontal scrollbar */
+::-webkit-scrollbar:horizontal {
+  height: 6px; /* Slimmer horizontal scrollbar */
+}
+
 /* Track (the background) */
 ::-webkit-scrollbar-track {
   background: #1e1e1e; /* Dark background for contrast */
