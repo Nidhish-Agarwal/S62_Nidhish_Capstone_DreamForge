@@ -13,7 +13,7 @@ export default function Dashboard() {
     {
       id: "1",
       title: "Lost in a Maze",
-      date: "5th Feb 2025",
+      date: "2025-03-07T14:30:00.123Z",
       description:
         "I found myself wandering through an endless maze, unable to find my way out. The walls kept shifting, making it even more confusing.",
       meaning:
@@ -31,7 +31,7 @@ export default function Dashboard() {
     {
       id: "2",
       title: "Talking Animals",
-      date: "12th Jan 2025",
+      date: "2025-03-07T14:30:00.123Z",
       description:
         "I had a dream where animals could talk to me. A wise owl gave me life advice, and a fox shared secrets of the universe.",
       meaning:
@@ -49,7 +49,7 @@ export default function Dashboard() {
     {
       id: "3",
       title: "Floating in Space",
-      date: "20th Jan 2025",
+      date: "2025-03-07T14:30:00.123Z",
       description:
         "I dreamt that I was floating freely in space, gazing at the stars and feeling weightless. It was peaceful yet overwhelming.",
       meaning:
@@ -67,7 +67,7 @@ export default function Dashboard() {
     {
       id: "4",
       title: "Chasing Shadows",
-      date: "28th Jan 2025",
+      date: "2025-03-07T14:30:00.123Z",
       description:
         "I was running after dark figures in a foggy forest, but no matter how fast I went, I couldn't catch them.",
       meaning:

@@ -3,11 +3,16 @@ import { motion } from "framer-motion";
 import { Doughnut } from "react-chartjs-2";
 import "chart.js/auto";
 import { FaEdit, FaArrowLeft, FaArrowRight } from "react-icons/fa";
+import { format } from "date-fns";
+import HeartIcon from "../icons/HeartIcon";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 export default function DreamDetailsOverlay({ dream, setOpenOverlay }) {
+  console.log(dream);
+  const axiosPrivate = useAxiosPrivate();
   const [liked, setLiked] = useState(dream.isLiked);
-  const positivePercentage = dream.sentiment.positive;
-  const negativePercentage = dream.sentiment.negative;
+  const positivePercentage = dream.analysis.sentiment.positive;
+  const negativePercentage = dream.analysis.sentiment.negative;
 
   // Determine the progress bar width and color based on the higher percentage
   const progressWidth = Math.max(positivePercentage, negativePercentage);
@@ -21,9 +26,9 @@ export default function DreamDetailsOverlay({ dream, setOpenOverlay }) {
     datasets: [
       {
         data: [
-          dream.sentiment.positive,
-          dream.sentiment.negative,
-          dream.sentiment.neutral,
+          dream.analysis.sentiment.positive,
+          dream.analysis.sentiment.negative,
+          dream.analysis.sentiment.neutral,
         ],
         backgroundColor: ["#4CAF50", "#E63946", "#CCCCCC"],
         hoverOffset: 4,
@@ -48,29 +53,31 @@ export default function DreamDetailsOverlay({ dream, setOpenOverlay }) {
           />
           <div className="text-center">
             <h1 className="text-4xl font-bold">{dream.title}</h1>
-            <p className="text-xs mt-2 text-gray-300">{dream.date}</p>
+            <p className="text-xs mt-2 text-gray-300">
+              {format(new Date(dream.date), "dd MMM yyyy")}
+            </p>
           </div>
           {/* Heart Button */}
-          <div className="w-8 h-8 rounded-full bg-white bg-opacity-50 flex items-center justify-center">
-            <motion.button
-              whileTap={{ scale: 0.8 }}
-              onClick={() => setLiked(!liked)}
-              className="text-gray-400"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                className={`w-6 h-6 ${
-                  liked
-                    ? "fill-red-500 stroke-red-500"
-                    : "stroke-red-500 fill-none"
-                }`}
-              >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </motion.button>
+          <div
+            className="h-8 w-8 flex justify-center items-center rounded-full bg-white/50 hover:bg-white/60"
+            onClick={async (e) => {
+              e.stopPropagation();
+              setLiked(!liked);
+              try {
+                // Call your API endpoint to toggle like.
+                const response = await axiosPrivate.put(
+                  `/dream/${dream._id}/like`
+                );
+                // Update state with response if needed:
+                setLiked(response.data.isLiked);
+              } catch (error) {
+                console.error("Error updating like:", error);
+                // Optionally, revert UI if error occurs
+                setLiked(liked);
+              }
+            }}
+          >
+            <HeartIcon liked={liked} setLiked={setLiked} />
           </div>
         </div>
 
@@ -98,14 +105,14 @@ export default function DreamDetailsOverlay({ dream, setOpenOverlay }) {
             </div>
             <h2 className="text-xl font-semibold mt-4">Meaning:</h2>
             <div className="bg-white/25 rounded-2xl px-5 py-6 mt-2">
-              <p className="text-gray-300">{dream.meaning}</p>
+              <p className="text-gray-300">{dream.analysis.interpretation}</p>
             </div>
             <h2 className="text-xl font-semibold mt-4">Keywords:</h2>
-            <div className="flex gap-2 mt-2">
-              {["Stars", "Ocean", "Flying"].map((tag) => (
+            <div className="flex gap-2 mt-2 overflow-x-auto whitespace-nowrap pb-2">
+              {dream.analysis.keywords.map((tag) => (
                 <span
                   key={tag}
-                  className="bg-white/50 px-3 py-1 rounded-full text-white text-sm"
+                  className="bg-white/50 px-3 py-1 rounded-full text-white text-sm min-w-fit"
                 >
                   {tag}
                 </span>
