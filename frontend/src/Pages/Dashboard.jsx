@@ -11,78 +11,141 @@ import axios from "axios";
 export default function Dashboard() {
   const demoDreams = [
     {
-      id: "1",
-      title: "Lost in a Maze",
-      date: "2025-03-07T14:30:00.123Z",
+      _id: "67f3eba0724cd7acda6a8f40",
+      user_id: "67b81535b77aa23e5c58b583",
+      title: "getting kidnapped",
       description:
-        "I found myself wandering through an endless maze, unable to find my way out. The walls kept shifting, making it even more confusing.",
-      meaning:
-        "This dream suggests feelings of uncertainty or being stuck in a situation. It might represent indecisiveness or a search for direction in life.",
-      keywords: ["Maze", "Lost", "Confusion"],
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSATHXh1kHWxN7H_dHc2j6vqvaT3_LwQauJ1Q&s",
-      sentiment: {
-        positive: "30",
-        negative: "60",
-        neutral: "10",
+        "I was sitting at a random place and then suddenly a few people came and grabbed me and took me to an unknown and abandoned place. Those people were very scary, and then they started to threaten me, and then because of all the fear, I started to cry, and then I woke up.",
+      emotions: ["Sad", "Fearful", "Confused"],
+      analysis: {
+        sentiment: {
+          positive: 0,
+          negative: 1,
+          neutral: 0,
+        },
+        keywords: [
+          "kidnapped",
+          "fear",
+          "abandoned",
+          "danger",
+          "crying",
+          "threat",
+          "isolation",
+        ],
+        interpretation:
+          "This dream may symbolize feelings of vulnerability, fear of losing control, and a desire to regain a sense of security.",
+        image_prompt:
+          "A dark, eerie abandoned building with broken windows, surrounded by a foggy atmosphere that evokes a sense of isolation and danger.",
+        processed_at: "2025-04-07T15:13:47.979Z",
       },
-      isLiked: "false",
+      analysis_status: "completed",
+      date: "2025-04-07T00:00:00.000Z",
+      dream_type: "",
+      isLiked: true,
+      retry_count: 1,
     },
     {
-      id: "2",
-      title: "Talking Animals",
-      date: "2025-03-07T14:30:00.123Z",
+      _id: "76a9a2b8e784a213f9fd4e16",
+      user_id: "67b81535b77aa23e5c58b584",
+      title: "flying through the sky",
       description:
-        "I had a dream where animals could talk to me. A wise owl gave me life advice, and a fox shared secrets of the universe.",
-      meaning:
-        "This dream may symbolize wisdom, hidden knowledge, or a deep connection with nature. It could also mean you are looking for guidance in life.",
-      keywords: ["Animals", "Talking", "Wisdom"],
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSATHXh1kHWxN7H_dHc2j6vqvaT3_LwQauJ1Q&s",
-      sentiment: {
-        positive: "50",
-        negative: "20",
-        neutral: "30",
+        "I was soaring high above the city, feeling free and powerful. Everything looked small from above, and I felt like I could do anything.",
+      emotions: ["Happy", "Empowered", "Free"],
+      analysis: {
+        sentiment: {
+          positive: 1,
+          negative: 0,
+          neutral: 0,
+        },
+        keywords: [
+          "flying",
+          "freedom",
+          "power",
+          "sky",
+          "soaring",
+          "empowerment",
+        ],
+        interpretation:
+          "This dream may symbolize feelings of liberation, empowerment, and control over your own destiny.",
+        image_prompt:
+          "A vast, clear blue sky with a bird's-eye view of the city below, creating a feeling of boundless freedom and strength.",
+        processed_at: "2025-04-15T10:20:47.979Z",
       },
-      isLiked: "true",
+      analysis_status: "completed",
+      date: "2025-04-15T00:00:00.000Z",
+      dream_type: "",
+      isLiked: true,
+      retry_count: 0,
     },
     {
-      id: "3",
-      title: "Floating in Space",
-      date: "2025-03-07T14:30:00.123Z",
+      _id: "92f1b7a12d44e8734ff0f1a2",
+      user_id: "67b81535b77aa23e5c58b585",
+      title: "losing my wallet",
       description:
-        "I dreamt that I was floating freely in space, gazing at the stars and feeling weightless. It was peaceful yet overwhelming.",
-      meaning:
-        "This dream could signify a desire for freedom or exploration. It might also reflect feelings of isolation or detachment from reality.",
-      keywords: ["Space", "Floating", "Stars"],
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSATHXh1kHWxN7H_dHc2j6vqvaT3_LwQauJ1Q&s",
-      sentiment: {
-        positive: "65",
-        negative: "25",
-        neutral: "10",
+        "I was at a crowded mall and suddenly realized that my wallet was missing. I searched everywhere, but I couldn't find it, and I felt extremely anxious.",
+      emotions: ["Anxious", "Frustrated", "Panicked"],
+      analysis: {
+        sentiment: {
+          positive: 0,
+          negative: 1,
+          neutral: 0,
+        },
+        keywords: [
+          "wallet",
+          "loss",
+          "anxiety",
+          "crowded",
+          "searching",
+          "fear",
+          "frustration",
+        ],
+        interpretation:
+          "This dream may reflect your worries about losing something valuable or important, potentially symbolizing fear of losing control or security.",
+        image_prompt:
+          "A bustling, crowded mall with an empty, deserted space where the wallet was lost, creating a sense of panic and helplessness.",
+        processed_at: "2025-04-16T13:50:23.979Z",
       },
-      isLiked: "true",
+      analysis_status: "completed",
+      date: "2025-04-16T00:00:00.000Z",
+      dream_type: "",
+      isLiked: false,
+      retry_count: 2,
     },
     {
-      id: "4",
-      title: "Chasing Shadows",
-      date: "2025-03-07T14:30:00.123Z",
+      _id: "cb7c0b7f3424d4e763ebf1a8",
+      user_id: "67b81535b77aa23e5c58b586",
+      title: "being late for an exam",
       description:
-        "I was running after dark figures in a foggy forest, but no matter how fast I went, I couldn't catch them.",
-      meaning:
-        "This dream might indicate unresolved issues or the pursuit of something unattainable. It could also symbolize fear or uncertainty.",
-      keywords: ["Shadows", "Running", "Forest"],
-      image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ9T2lJm0w",
-      sentiment: {
-        positive: "40",
-        negative: "50",
-        neutral: "10",
+        "I was running through hallways, trying to reach the exam room, but no matter how fast I ran, I was always late. I felt panic and fear as I approached the door, knowing it was already too late.",
+      emotions: ["Stressed", "Fearful", "Panicked"],
+      analysis: {
+        sentiment: {
+          positive: 0,
+          negative: 1,
+          neutral: 0,
+        },
+        keywords: [
+          "exam",
+          "late",
+          "panic",
+          "stress",
+          "fear",
+          "running",
+          "failure",
+        ],
+        interpretation:
+          "This dream may symbolize anxiety related to deadlines, fear of failure, or concerns about being unprepared for important life challenges.",
+        image_prompt:
+          "A narrow hallway with flickering lights, and an exam room door that looms farther away, emphasizing the feeling of impending failure.",
+        processed_at: "2025-04-17T18:30:12.979Z",
       },
-      isLiked: "false",
+      analysis_status: "completed",
+      date: "2025-04-17T00:00:00.000Z",
+      dream_type: "",
+      isLiked: true,
+      retry_count: 1,
     },
   ];
-
   const demoPosts = [
     {
       user: {

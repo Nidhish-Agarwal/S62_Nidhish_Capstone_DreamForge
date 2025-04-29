@@ -4,14 +4,18 @@ import LoginForm from "./auth/LoginForm";
 import Unauthorized from "./Pages/Unauthorized";
 import NotFound from "./Pages/NotFound";
 import Dashboard from "./Pages/Dashboard";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import PersistLogin from "./components/PersistLogin";
 import RequireAuth from "./components/RequireAuth";
 import MainLayout from "./layouts/MainLayout";
-import LandingPage from "./Pages/LandingPage";
+import LandingPage from "./Pages/LandingPage2";
 import ProfilePage from "./Pages/ProfilePage";
 import MyDreamsPage from "./Pages/MyDreamsPage";
 import { Toaster } from "sonner";
+import CommunityPage from "./Pages/CommunityPage";
+import AllPostsPage from "./Pages/AllPostsPage";
+import MyPostsPage from "./Pages/MyPostsPage";
+import BookmarksPage from "./Pages/BookmarksPage";
 
 function App() {
   return (
@@ -47,10 +51,26 @@ function App() {
               path="/mydreams"
               element={
                 <MainLayout>
+                  <Toaster position="bottom-right" richColors />
                   <MyDreamsPage />
                 </MainLayout>
               }
             />
+
+            <Route
+              path="/community"
+              element={
+                <MainLayout>
+                  <Toaster position="bottom-right" richColors />
+                  <CommunityPage />
+                </MainLayout>
+              }
+            >
+              <Route index element={<Navigate to="all-posts" replace />} />
+              <Route path="all-posts" element={<AllPostsPage />} />
+              <Route path="my-posts" element={<MyPostsPage />} />
+              <Route path="bookmarks" element={<BookmarksPage />} />
+            </Route>
           </Route>
         </Route>
 

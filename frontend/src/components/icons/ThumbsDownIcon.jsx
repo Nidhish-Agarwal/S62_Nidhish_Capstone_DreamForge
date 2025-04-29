@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-function ThumbsDownIcon() {
-  const [disliked, setDisliked] = useState(false);
+function ThumbsDownIcon({ disliked }) {
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -13,7 +12,6 @@ function ThumbsDownIcon() {
       initial={{ scale: 1 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 10 }}
-      onClick={() => setDisliked(!disliked)}
       className="cursor-pointer focus:outline-none focus:ring-0"
     >
       <motion.path

@@ -52,6 +52,18 @@ const UserSchema = new mongoose.Schema(
       enum: ["local", "google", "github"],
       default: "local", // Allows social login in the future
     },
+    bookmarks: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CommunityPost",
+      },
+    ], // For quick lookup of user's bookmarked posts
+    likedPosts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "CommunityPost",
+      },
+    ], // For quick lookup of posts the user liked
   },
   { timestamps: true }
 );

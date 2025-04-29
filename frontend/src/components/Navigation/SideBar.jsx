@@ -134,7 +134,7 @@ export default function SideBar({ currentPath }) {
               <AlertDialog>
                 <AlertDialogTrigger className="w-full">
                   <div
-                    onClick={() => setIsLogoutOpen(true)}
+                    // onClick={() => setIsLogoutOpen(true)}
                     className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer"
                   >
                     <span className="text-sm mr-2">

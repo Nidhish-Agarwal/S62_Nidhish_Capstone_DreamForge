@@ -16,20 +16,30 @@ function MainLayout({ children }) {
       <div className="w-screen h-screen fixed  bg-gradient-to-b from-[#87CEEB] to-[#B0E0E6]  dark:bg-gradient-to-b dark:from-[#1a1a40] dark:to-[#0f0f33] -z-50"></div>
       {/* Light Mode background effects */}
       <div className="dark:hidden fixed h-screen w-screen -z-50">
+        {/* dreamy gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#fcd6f6] to-[#c2e9fb]"></div>
+
+        {/* subtle blur glow */}
+        <div className="absolute top-[10%] left-[10%] w-[200px] h-[200px] bg-pink-200 rounded-full blur-3xl opacity-30"></div>
+        <div className="absolute bottom-[15%] right-[15%] w-[200px] h-[200px] bg-blue-200 rounded-full blur-3xl opacity-30"></div>
+
+        {/* dreamy clouds */}
         <img
           src={cloud}
           alt="Cloud 1"
-          className="absolute top-[30%] left-[10%] w-[15vw] opacity-70"
+          className="absolute top-[25%] left-[8%] w-[20vw] opacity-60 animate-float-slow"
         />
         <img
           src={cloud}
           alt="Cloud 2"
-          className="absolute top-[50%] right-[15%] w-[20vw] opacity-60"
+          className="absolute top-[50%] right-[10%] w-[25vw] opacity-50 animate-float-medium"
         />
+
+        {/* sun glow */}
         <img
           src={sun}
           alt="Sun"
-          className="absolute top-[10%] right-[5%] w-[10vw] drop-shadow-md opacity-90"
+          className="absolute top-[5%] right-[5%] w-[8vw] drop-shadow-2xl opacity-80 mix-blend-screen"
         />
       </div>
       {/* Dark mode background effects */}

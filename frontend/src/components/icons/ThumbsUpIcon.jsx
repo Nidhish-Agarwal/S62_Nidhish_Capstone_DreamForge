@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-function ThumbsUpIcon() {
-  const [liked, setLiked] = useState(false);
+function ThumbsUpIcon({ liked }) {
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -13,7 +12,6 @@ function ThumbsUpIcon() {
       initial={{ scale: 1 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 10 }}
-      onClick={() => setLiked(!liked)}
       className="cursor-pointer focus:outline-none focus:ring-0"
     >
       <motion.path
