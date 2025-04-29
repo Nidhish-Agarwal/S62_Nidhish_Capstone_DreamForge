@@ -98,19 +98,30 @@ const getAllDreams = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized: Missing user ID" });
     }
 
+    const search = req.query.search?.trim() || "";
+
+    const filter = {
+      user_id: req.userId,
+    };
+
+    if (search) {
+      // Enhanced search - look in both title and description
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } }, // case-insensitive search on title
+        { description: { $regex: search, $options: "i" } }, // also search in description
+      ];
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
     // Fetch paginated raw dreams for the user
-    const rawDreamsResult = await RawDream.paginate(
-      { user_id: req.userId },
-      {
-        page,
-        limit,
-        sort: { date: -1 },
-        select: "-__v -createdAt -updatedAt",
-      }
-    );
+    const rawDreamsResult = await RawDream.paginate(filter, {
+      page,
+      limit,
+      sort: { date: -1 },
+      select: "-__v -createdAt -updatedAt",
+    });
 
     // If no dreams found, return an empty response
     if (!rawDreamsResult.docs.length) {
@@ -128,17 +139,17 @@ const getAllDreams = async (req, res) => {
     // Find corresponding processed dreams
     const processedDreams = await ProcessedDream.find({
       dream_id: { $in: rawDreamIds },
-    }).select("-_id -__v -createdAt -updatedAt");
+    }).select("-__v -createdAt -updatedAt");
 
     // Create a map for quick lookup
     const processedMap = processedDreams.reduce((acc, curr) => {
-      acc[curr.dream_id] = curr;
+      acc[curr.dream_id.toString()] = curr;
       return acc;
     }, {});
 
     // Merge raw dreams with their processed data
     const mergedDreams = rawDreamsResult.docs.map((rawDream) => {
-      const processed = processedMap[rawDream._id] || null;
+      const processed = processedMap[rawDream._id.toString()] || null;
 
       return {
         ...rawDream.toObject(),
@@ -159,6 +170,7 @@ const getAllDreams = async (req, res) => {
       dreams: mergedDreams,
       totalPages: rawDreamsResult.totalPages,
       currentPage: rawDreamsResult.page,
+      totalItems: rawDreamsResult.totalDocs,
     });
   } catch (error) {
     console.error("Error fetching dreams:", error);

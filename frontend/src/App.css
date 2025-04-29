@@ -1,0 +1,27 @@
+#tsparticles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    z-index: -1; /* Ensures particles stay in the background */
+  }
+
+
+  .sr-only {
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  
+  .custom-dialog-content [data-radix-dialog-close] {
+    display: none !important;
+  }
+  

@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-function HeartIcon({ setLiked, liked }) {
+function HeartIcon({ onClick, liked }) {
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -12,7 +12,7 @@ function HeartIcon({ setLiked, liked }) {
       initial={{ scale: 1 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 10 }}
-      onClick={() => setLiked(!liked)}
+      onClick={onClick}
       className="cursor-pointer focus:outline-none focus:ring-0"
     >
       <motion.path

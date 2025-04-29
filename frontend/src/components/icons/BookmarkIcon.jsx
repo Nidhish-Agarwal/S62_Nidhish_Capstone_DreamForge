@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-function BookmarkIcon({ setBookmarked, bookmarked }) {
+function BookmarkIcon({ onClick, bookmarked }) {
   return (
     <motion.svg
       xmlns="http://www.w3.org/2000/svg"
@@ -12,7 +12,7 @@ function BookmarkIcon({ setBookmarked, bookmarked }) {
       initial={{ scale: 1 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 10 }}
-      onClick={() => setBookmarked(!bookmarked)}
+      onClick={onClick}
       className="cursor-pointer focus:outline-none focus:ring-0"
     >
       <motion.path
