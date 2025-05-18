@@ -3,6 +3,7 @@ const User = require("../models/user.model.js"); // Import User model
 const mongoose = require("mongoose");
 const { addAnalysisJob } = require("../queues/analysis.queue.js");
 const ProcessedDream = require("../models/processedDream.model.js");
+const { addImageJob } = require("../queues/image.queue.js");
 
 const addRawDream = async (req, res) => {
   try {
@@ -52,7 +53,7 @@ const addRawDream = async (req, res) => {
 
     // Start async processing
     // Add to processing queue
-    await addAnalysisJob(savedDream._id);
+    await addAnalysisJob(savedDream._id, req.userId);
     // processDreamAnalysis(savedDream._id);
 
     res.status(201).json({
@@ -77,16 +78,39 @@ const retryAnalysis = async (req, res) => {
       return res.status(400).json({ error: "Max retries exceeded" });
     }
 
-    // Reset retry count for manual retries
-    dream.retry_count = 0;
     dream.analysis_status = "pending";
     await dream.save();
 
-    await addAnalysisJob(dream._id);
+    await addAnalysisJob(dream._id, req.userId);
 
     res.json({ message: "Retry initiated" });
   } catch (error) {
     res.status(500).json({ error: "Retry failed" });
+  }
+};
+
+const retryImageGeneration = async (req, res) => {
+  try {
+    const dream = await ProcessedDream.findById(req.params.id);
+    if (!dream) return res.status(404).json({ error: "Dream not found" });
+
+    // Optional: Retry limit (can also track image_retry_count separately)
+    if (dream.image_retry_count >= 3) {
+      return res.status(400).json({ error: "Max image retries exceeded" });
+    }
+
+    // Reset image status and increment retry count
+    dream.image_status = "pending";
+    // dream.image_retry_count = (dream.image_retry_count || 0) + 1;
+    await dream.save();
+
+    // Add image generation job
+    await addImageJob(dream._id, dream.image_prompt, req.userId);
+
+    res.json({ message: "Image generation retry initiated." });
+  } catch (err) {
+    console.error("Image retry failed:", err);
+    res.status(500).json({ error: "Image retry failed" });
   }
 };
 
@@ -119,7 +143,7 @@ const getAllDreams = async (req, res) => {
     const rawDreamsResult = await RawDream.paginate(filter, {
       page,
       limit,
-      sort: { date: -1 },
+      sort: { createdAt: -1 },
       select: "-__v -createdAt -updatedAt",
     });
 
@@ -156,11 +180,16 @@ const getAllDreams = async (req, res) => {
         analysis_status: rawDream.analysis_status,
         analysis: processed
           ? {
+              _id: processed._id,
               sentiment: processed.sentiment,
               keywords: processed.keywords,
               interpretation: processed.interpretation,
               image_prompt: processed.image_prompt,
+              image_url: processed.image_url || null,
+              image_status: processed.image_status,
+              image_retry_count: processed.image_retry_count,
               processed_at: processed.processed_at,
+              image_is_retrying: processed.image_is_retrying,
             }
           : null,
       };
@@ -201,4 +230,10 @@ const toggleLike = async (req, res) => {
   }
 };
 
-module.exports = { addRawDream, retryAnalysis, getAllDreams, toggleLike };
+module.exports = {
+  addRawDream,
+  retryAnalysis,
+  getAllDreams,
+  toggleLike,
+  retryImageGeneration,
+};

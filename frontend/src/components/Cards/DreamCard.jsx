@@ -20,7 +20,7 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [openOverlay, setOpenOverlay] = useState(false);
   const axiosPrivate = useAxiosPrivate();
-  console.log(dream);
+  // console.log(dream);
 
   // Ensure that sentiment and progressWidth are safely accessed
   const positivePercentage = dream.analysis?.sentiment?.positive || 0;
@@ -65,18 +65,23 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
     }
   };
 
+  const [isRetryingImage, setIsRetryingImage] = useState(false);
+
+  const handleRetryImage = async (dreamId) => {
+    setIsRetryingImage(true);
+    try {
+      console.log(dreamId);
+      await axiosPrivate.post(`/dream/retry-image/${dreamId}`);
+    } finally {
+      setIsRetryingImage(false);
+    }
+  };
+
   useEffect(() => {
     document.documentElement.classList.toggle("overlay-open", openOverlay);
   }, [openOverlay]);
 
-  const {
-    title,
-    description,
-    date,
-    image,
-    analysis_status,
-    retry_count = 0,
-  } = dream;
+  const { title, description, date, analysis_status, retry_count = 0 } = dream;
 
   return (
     <>
@@ -105,33 +110,40 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
                   <p className="text-lg font-semibold text-white">
                     Analysis failed
                   </p>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleRetry}
-                          disabled={isRetrying || retry_count >= 3}
-                          className="px-4 py-2"
-                        >
-                          {isRetrying ? (
-                            <RotateCw className="h-5 w-5 animate-spin mr-2" />
-                          ) : (
-                            <RotateCw className="h-5 w-5 mr-2" />
-                          )}
-                          {retry_count >= 3 ? "Max Retries" : "Try Again"}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>
-                          {retry_count >= 3
-                            ? "Retry limit reached"
-                            : "Retry dream analysis"}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  {dream.analysis_is_retrying ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <RotateCw className="h-6 w-6 animate-spin text-white" />
+                      <p className="text-sm text-white">Auto-retrying...</p>
+                    </div>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={handleRetry}
+                            disabled={isRetrying || retry_count >= 3}
+                            className="px-4 py-2"
+                          >
+                            {isRetrying ? (
+                              <RotateCw className="h-5 w-5 animate-spin mr-2" />
+                            ) : (
+                              <RotateCw className="h-5 w-5 mr-2" />
+                            )}
+                            {retry_count >= 3 ? "Max Retries" : "Try Again"}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {retry_count >= 3
+                              ? "Retry limit reached"
+                              : "Retry dream analysis"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
               )}
             </div>
@@ -141,13 +153,16 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
           <motion.div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: `url(${image || NoImage})`, // First try the provided image
+              backgroundImage: `url(${dream?.analysis?.image_url || NoImage})`, // First try the provided image
             }}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.5 }}
-            onError={(e) => {
-              e.currentTarget.style.backgroundImage = `url(${NoImage})`; // If the image fails, fallback to NoImage
-            }}
+          />
+          <img
+            src={dream?.analysis?.image_url}
+            alt="dream"
+            onError={(e) => (e.currentTarget.src = NoImage)}
+            className="hidden"
           />
 
           <div className="absolute inset-0 bg-black/40" />
@@ -213,6 +228,8 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
           dream={dream}
           setOpenOverlay={setOpenOverlay}
           updateDream={updateDream}
+          onRetryImage={handleRetryImage}
+          isRetryingImage={isRetryingImage}
         />
       )}
     </>

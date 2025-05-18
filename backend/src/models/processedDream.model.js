@@ -46,6 +46,21 @@ const processedDreamSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    image_status: {
+      type: String,
+      enum: ["pending", "processing", "completed", "failed"],
+      default: "pending",
+    },
+    image_url: String,
+    image_retry_count: { type: Number, default: 0, max: 3 },
+    image_generation_attempts: [
+      { status: String, error: String, timestamp: Date },
+    ],
+    image_is_retrying: {
+      type: Boolean,
+      default: false,
+    },
+
     processed_at: { type: Date, default: Date.now },
   },
   { timestamps: true }

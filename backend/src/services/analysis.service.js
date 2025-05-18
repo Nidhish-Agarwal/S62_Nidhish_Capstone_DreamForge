@@ -33,6 +33,16 @@ const createAnalysisPrompt = (dream) => ({
   },
 });
 
+// Utility: Check if a string is valid JSON
+function isValidJson(str) {
+  try {
+    const parsed = JSON.parse(str);
+    return typeof parsed === "object" && parsed !== null;
+  } catch {
+    return false;
+  }
+}
+
 const processDreamAnalysis = async (dreamId) => {
   try {
     const rawDream = await RawDream.findById(dreamId);
@@ -43,7 +53,7 @@ const processDreamAnalysis = async (dreamId) => {
         {
           role: "system",
           content:
-            "You are a dream analysis assistant. Your task is to analyze dreams, provide interpretations, and generate outputs in a structured format.",
+            "You are a dream analysis assistant. Your task is to analyze dreams, provide interpretations, and generate outputs in a structured format. Return ONLY a valid JSON object. No Markdown, no backticks, no explanation.",
         },
         {
           role: "user",
@@ -51,30 +61,41 @@ const processDreamAnalysis = async (dreamId) => {
         },
       ],
       model: "deepseek/deepseek-chat:free",
-      response_format: { type: "json_object" },
+      response_format: { type: "json_object" }, // Enforce JSON in capable models
     });
 
-    const rawResponse = completion.choices[0].message.content;
+    let rawResponse = completion.choices[0].message.content;
 
-    // Clean up response
+    // Optional: log raw response
+    // console.log("🧠 Raw AI Response:", rawResponse);
+
+    // Clean up possible Markdown formatting
     const cleanedResponse = rawResponse
       .replace(/^```json/, "")
+      .replace(/^```/, "")
       .replace(/```$/, "")
       .trim();
 
+    if (!isValidJson(cleanedResponse)) {
+      console.error("❌ Gemini returned invalid JSON:", cleanedResponse);
+      throw new Error("Invalid JSON format in AI response");
+    }
+
     const analysis = JSON.parse(cleanedResponse);
 
-    console.log(analysis);
+    // Optional sanity check for required keys
+    if (!analysis.title || !analysis.interpretation || !analysis.image_prompt) {
+      throw new Error("Parsed response missing required keys");
+    }
 
+    // Store processed result
     return await ProcessedDream.create({
       dream_id: dreamId,
       ...analysis,
       analysis_version: "v1.2",
     });
   } catch (error) {
-    console.error(`Analysis failed for dream ${dreamId}:`, error);
-
-    // Return structured error instead of throwing
+    console.error(`❌ Analysis failed for dream ${dreamId}:`, error.message);
     return {
       error: true,
       message: error.message || "Failed to analyze dream",
