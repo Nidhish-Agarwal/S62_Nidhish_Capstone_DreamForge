@@ -41,6 +41,10 @@ const rawDreamSchema = new mongoose.Schema(
       default: 0,
       max: 3,
     },
+    analysis_is_retrying: {
+      type: Boolean,
+      default: false,
+    },
     last_processed_at: Date,
     analysis_attempts: [
       {

@@ -7,6 +7,7 @@ import { io } from "socket.io-client";
 import Person_sleeping from "../assets/Person_sleeping.png";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import useDreamSocket from "../hooks/useDreamSocket";
 
 const MyDreamsPage = () => {
   const [dreams, setDreams] = useState([]);
@@ -17,22 +18,7 @@ const MyDreamsPage = () => {
   const { ref, inView } = useInView();
   const axiosPrivate = useAxiosPrivate();
 
-  // Socket.IO for real-time updates
-  useEffect(() => {
-    const socket = io("http://localhost:8080", {
-      withCredentials: true,
-    });
-
-    socket.on("dream-updated", (updatedDream) => {
-      setDreams((prev) =>
-        prev.map((d) =>
-          d._id === updatedDream._id ? { ...d, ...updatedDream } : d
-        )
-      );
-    });
-
-    return () => socket.disconnect();
-  }, []);
+  useDreamSocket(setDreams);
 
   // Fetch dreams (infinite scroll)
   useEffect(() => {

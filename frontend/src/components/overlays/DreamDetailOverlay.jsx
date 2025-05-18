@@ -24,16 +24,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import NoImage from "../../assets/No-Image.png";
+import { AlertCircle, RotateCw } from "lucide-react";
 
 export default function DreamDetailsOverlay({
   dream,
   setOpenOverlay,
   updateDream,
+  onRetryImage,
+  isRetryingImage,
 }) {
   const axiosPrivate = useAxiosPrivate();
   const liked = dream.isLiked;
   const positivePercentage = dream.analysis.sentiment.positive;
   const negativePercentage = dream.analysis.sentiment.negative;
+  console.log(dream);
 
   const handleLike = async (e) => {
     e.stopPropagation();
@@ -108,11 +112,83 @@ export default function DreamDetailsOverlay({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <img
-                src={dream.image || NoImage}
-                alt="Dream visualization"
-                className="w-full object-cover rounded-lg"
-              />
+              <motion.div
+                className="relative rounded-lg shadow-lg overflow-hidden min-h-[300px] bg-black/30 flex items-center justify-center"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                {dream.analysis.image_status === "processing" && (
+                  <div className="text-center space-y-2">
+                    <RotateCw className="h-10 w-10 animate-spin text-white mx-auto" />
+                    <p className="text-white">Generating dream image...</p>
+                  </div>
+                )}
+
+                {dream.analysis.image_status === "failed" && (
+                  <div className="text-center space-y-2">
+                    <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
+                    <p className="text-white">Image generation failed</p>
+                    {dream.analysis.image_is_retrying ? (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{
+                          duration: 0.5,
+                          repeat: Infinity,
+                          repeatType: "reverse",
+                        }}
+                        className="flex items-center justify-center gap-2 text-yellow-400 text-sm"
+                      >
+                        <RotateCw className="animate-spin-slow h-5 w-5" />
+                        Retrying in a few moments...
+                      </motion.div>
+                    ) : (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => onRetryImage(dream.analysis._id)}
+                              disabled={
+                                isRetryingImage ||
+                                dream.analysis.image_retry_count >= 3
+                              }
+                              className="mx-auto"
+                            >
+                              {isRetryingImage ? (
+                                <RotateCw className="h-5 w-5 animate-spin mr-2" />
+                              ) : (
+                                <RotateCw className="h-5 w-5 mr-2" />
+                              )}
+                              {dream.analysis.image_retry_count >= 3
+                                ? "Max Retries"
+                                : "Retry Now"}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {dream.analysis.image_retry_count >= 3
+                                ? "Retry limit reached"
+                                : "Retry dream image generation"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                )}
+
+                {dream.analysis.image_status === "completed" && (
+                  <img
+                    src={dream.analysis.image_url || NoImage}
+                    alt="Dream visualization"
+                    className="w-full object-cover rounded-lg max-h-[400px]"
+                  />
+                )}
+              </motion.div>
+
               <div className="bg-white/10 p-4 rounded-lg mt-4">
                 <h2 className="text-lg font-semibold">Sentiment Analysis:</h2>
                 <Doughnut data={sentimentData} />

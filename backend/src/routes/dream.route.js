@@ -4,6 +4,7 @@ const {
   retryAnalysis,
   getAllDreams,
   toggleLike,
+  retryImageGeneration,
 } = require("../controllers/dream.controller.js");
 
 // Middleware to verify the access token
@@ -15,5 +16,6 @@ router.post("/", verifyJWT, addRawDream);
 router.get("/getdreams", verifyJWT, getAllDreams);
 router.post("/:id/retry", verifyJWT, retryAnalysis);
 router.put("/:id/like", verifyJWT, toggleLike);
+router.post("/retry-image/:id", verifyJWT, retryImageGeneration);
 
 module.exports = router;
