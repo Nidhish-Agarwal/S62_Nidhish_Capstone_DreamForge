@@ -62,13 +62,7 @@ function MainLayout({ children }) {
       <div className="flex-1 flex flex-col md:ml-52 ml-5 h-screen">
         {/* Top Bar */}
         <div className="fixed md:left-52 w-[calc(100%-0.5rem)] md:w-[calc(100%-13rem)] overflow-visible overlay-open:z-0 z-10">
-          <TopBar
-            currentPath={location.pathname}
-            sortOptions={["Newest", "Oldest", "Most Popular"]}
-            filterOptions={["All", "Completed", "Pending"]}
-            onSortChange={(option) => setSortBy(option)}
-            onFilterChange={(option) => setFilterBy(option)}
-          />
+          <TopBar currentPath={location.pathname} />
         </div>
 
         {/* Main Content */}

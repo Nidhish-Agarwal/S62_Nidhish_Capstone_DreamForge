@@ -6,17 +6,12 @@ import {
   FaFilter,
   FaSearch,
 } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useLocation } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import SearchAndFilterBar from "./SearchAndFilterBar";
 
-export default function TopBar({
-  currentPath,
-  sortOptions,
-  filterOptions,
-  onSortChange,
-  onFilterChange,
-}) {
+export default function TopBar({ currentPath }) {
   const { auth } = useAuth();
   const location = useLocation();
   const showSearchBar =
@@ -30,10 +25,6 @@ export default function TopBar({
         window.matchMedia("(prefers-color-scheme: dark)").matches)
     );
   });
-
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortOpen, setSortOpen] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
     if (darkMode) {
@@ -78,103 +69,12 @@ export default function TopBar({
         <p className="text-gray-500 text-xs">{today}</p>
       </div>
 
+      <SearchAndFilterBar />
+
       {/* Center Section - Search Bar */}
-      {showSearchBar && (
-        <div className="relative flex justify-center w-full md:w-auto gap-3 mt-2 md:mt-0 order-3 md:order-1">
-          {/* Sort Button */}
-          <button
-            className="p-2 rounded-xl bg-gradient-to-r from-[#752345] to-[#352736] text-white h-9 w-11 flex items-center justify-center relative"
-            onClick={() => {
-              setSortOpen(!sortOpen);
-              setFilterOpen(false);
-            }}
-          >
-            <FaSortAmountDownAlt />
-          </button>
-
-          {/* Sort Options (Dropdown) */}
-          <AnimatePresence>
-            {sortOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="absolute top-12 left-0 bg-white shadow-md rounded-lg p-2 w-40"
-              >
-                {sortOptions.map((option, index) => (
-                  <button
-                    key={index}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-200 text-gray-700 "
-                    onClick={() => {
-                      setSortOpen(false);
-                      onSortChange(option);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Filter Button */}
-          <button
-            className="p-2 rounded-xl bg-gradient-to-r from-[#752345] to-[#352736] text-white h-9 w-11 flex items-center justify-center relative"
-            onClick={() => {
-              setFilterOpen(!filterOpen);
-              setSortOpen(false);
-            }}
-          >
-            <FaFilter />
-          </button>
-
-          {/* Filter Options (Dropdown) */}
-          <AnimatePresence>
-            {filterOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="absolute z-50 top-12 left-16 bg-white shadow-md rounded-lg p-2 w-40"
-              >
-                {filterOptions.map((option, index) => (
-                  <button
-                    key={index}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-200 text-gray-700"
-                    onClick={() => {
-                      setFilterOpen(false);
-                      onFilterChange(option);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Search Bar */}
-          <div className="flex items-center bg-gradient-to-r from-[#752345] to-[#352736] text-white rounded-full px-3 py-2 h-9 w-56">
-            <FaSearch className="mr-2" />
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent outline-none text-white placeholder-white w-full"
-              onFocus={() => {
-                setSortOpen(false);
-                setFilterOpen(false);
-              }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Right Side - Theme Toggle & Profile */}
-      <div className="flex items-center gap-4 flex-shrink-0 md:order-2">
+      <div className="flex items-center gap-4 flex-shrink-0 sm:order-2">
         {/* Theme Toggle */}
         <div
           className="flex items-center bg-gray-300 dark:bg-gray-600 w-14 h-8 rounded-full p-1 cursor-pointer transition"
@@ -194,7 +94,7 @@ export default function TopBar({
         </div>
 
         {/* Profile */}
-        <div className="sm:flex hidden items-center gap-2">
+        {/* <div className="sm:flex hidden items-center gap-2">
           <img
             src="https://randomuser.me/api/portraits/men/1.jpg"
             alt="Profile"
@@ -203,7 +103,7 @@ export default function TopBar({
           <span className="font-medium text-xl dark:text-white">
             {auth.userName || "John Smith"}
           </span>
-        </div>
+        </div> */}
       </div>
     </div>
   );
