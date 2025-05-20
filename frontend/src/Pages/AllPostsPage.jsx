@@ -23,23 +23,8 @@ import {
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowUpIcon, PlusIcon } from "lucide-react";
-
-const SORT_OPTIONS = [
-  { value: "newest", label: "Newest" },
-  { value: "popular", label: "Most Liked" },
-  { value: "bookmarked", label: "Bookmarked" },
-];
+import { ArrowUpIcon } from "lucide-react";
 
 export default function AllPostsPage() {
   const [posts, setPosts] = useState([]);
@@ -47,8 +32,6 @@ export default function AllPostsPage() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [sort, setSort] = useState("newest");
-  const [filter, setFilter] = useState("all");
   const { ref, inView } = useInView();
   const axiosPrivate = useAxiosPrivate();
 
@@ -58,7 +41,7 @@ export default function AllPostsPage() {
       setLoading(true);
       setError(null);
       try {
-        const params = { page: pageToFetch, limit: 10, sort, filter };
+        const params = { page: pageToFetch, limit: 10 };
         const response = await axiosPrivate.get("community/post", { params });
         const { posts: newPosts, currentPage, totalPages } = response.data;
 
@@ -75,7 +58,7 @@ export default function AllPostsPage() {
         setLoading(false);
       }
     },
-    [sort, filter, hasMore, axiosPrivate]
+    [hasMore, axiosPrivate]
   );
 
   useEffect(() => {
@@ -99,6 +82,8 @@ export default function AllPostsPage() {
       prev.map((p) => (p._id === updatedPost._id ? updatedPost : p))
     );
   };
+
+  console.log(posts);
 
   // Post skeleton loading component
   const PostSkeleton = () => (
@@ -126,50 +111,6 @@ export default function AllPostsPage() {
 
   return (
     <div className="w-full flex flex-col items-center relative p-4">
-      {/* Actions:Sort & Filter */}
-      <div className="flex justify-between items-center w-full max-w-xl my-4 gap-4 px-2">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="bg-white/70 backdrop-blur-md border border-gray-300 text-gray-800 hover:bg-white rounded-full px-4 shadow-sm"
-            >
-              Sort: {SORT_OPTIONS.find((o) => o.value === sort)?.label}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="end">
-            <Command>
-              <CommandInput placeholder="Sort posts..." />
-              <CommandList>
-                {SORT_OPTIONS.map((opt) => (
-                  <CommandItem
-                    key={opt.value}
-                    onSelect={() => setSort(opt.value)}
-                  >
-                    {opt.label}
-                  </CommandItem>
-                ))}
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-
-        <Select onValueChange={setFilter} value={filter}>
-          <SelectTrigger
-            size="sm"
-            className="w-36 bg-white/70 backdrop-blur-md border border-gray-300 text-gray-800 hover:bg-white rounded-full px-4 shadow-sm"
-          >
-            <SelectValue placeholder="Filter" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="dreams">Dreams</SelectItem>
-            <SelectItem value="questions">Questions</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
       {/* Error Alert */}
       {error && (
         <Alert className="w-full max-w-xl mb-4 bg-red-50 border border-red-200 text-red-800 rounded-xl shadow-sm p-4 flex items-start gap-3">

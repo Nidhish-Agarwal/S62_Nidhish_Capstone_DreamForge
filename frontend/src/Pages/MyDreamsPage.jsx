@@ -3,13 +3,14 @@ import DreamCard from "../components/Cards/DreamCard";
 import { useInView } from "react-intersection-observer";
 import { Skeleton } from "@/components/ui/skeleton";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
-import { io } from "socket.io-client";
 import Person_sleeping from "../assets/Person_sleeping.png";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import useDreamSocket from "../hooks/useDreamSocket";
+import { useSearchContext } from "../context/SearchContext";
 
 const MyDreamsPage = () => {
+  const { filters } = useSearchContext();
   const [dreams, setDreams] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -24,15 +25,32 @@ const MyDreamsPage = () => {
   useEffect(() => {
     const fetchDreams = async () => {
       try {
+        setLoading(true);
+
+        const queryParams = new URLSearchParams({
+          page,
+          sort: filters.sortOption,
+          search: filters.searchQuery,
+          likedOnly: filters.likedOnly.toString(),
+        });
+
+        if (filters.emotions.length) {
+          queryParams.append("emotions", filters.emotions.join(","));
+        }
+
+        if (filters.status.length) {
+          queryParams.append("status", filters.status.join(","));
+        }
+
         const response = await axiosPrivate.get(
-          `/dream/getdreams?page=${page}`
+          `/dream/getdreams?${queryParams}`
         );
         const newDreams = response.data.dreams;
 
-        setDreams((prev) => [...prev, ...newDreams]);
+        setDreams((prev) => (page === 1 ? newDreams : [...prev, ...newDreams]));
         setHasMore(response.data.currentPage < response.data.totalPages);
       } catch (error) {
-        toast.error("Failed to load dreams. Please try again.");
+        toast.error("Failed to load dreams");
         console.error("Error fetching dreams:", error);
       } finally {
         setLoading(false);
@@ -40,10 +58,16 @@ const MyDreamsPage = () => {
       }
     };
 
-    if (hasMore) {
+    // ✅ prevent unnecessary fetch if no more pages
+    if (hasMore || page === 1) {
       fetchDreams();
     }
-  }, [page]);
+  }, [page, filters]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   // Trigger next page when ref comes into view
   useEffect(() => {

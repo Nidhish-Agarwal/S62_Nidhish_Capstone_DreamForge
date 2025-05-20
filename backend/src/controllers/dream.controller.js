@@ -123,10 +123,26 @@ const getAllDreams = async (req, res) => {
     }
 
     const search = req.query.search?.trim() || "";
+    const sortOption = req.query.sort || "newest";
+    const likedOnly = req.query.likedOnly === "true";
+    const emotions = req.query.emotions ? req.query.emotions.split(",") : [];
+    const status = req.query.status ? req.query.status.split(",") : [];
 
     const filter = {
       user_id: req.userId,
     };
+
+    if (likedOnly) {
+      filter.isLiked = true;
+    }
+
+    if (emotions.length > 0) {
+      filter.emotions = { $in: emotions };
+    }
+
+    if (status.length > 0) {
+      filter.analysis_status = { $in: status };
+    }
 
     if (search) {
       // Enhanced search - look in both title and description
@@ -136,6 +152,16 @@ const getAllDreams = async (req, res) => {
       ];
     }
 
+    let sort = { createdAt: -1 };
+    switch (sortOption) {
+      case "oldest":
+        sort = { createdAt: 1 };
+        break;
+      case "liked":
+        sort = { isLiked: -1, createdAt: -1 };
+        break;
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
@@ -143,7 +169,7 @@ const getAllDreams = async (req, res) => {
     const rawDreamsResult = await RawDream.paginate(filter, {
       page,
       limit,
-      sort: { createdAt: -1 },
+      sort,
       select: "-__v -createdAt -updatedAt",
     });
 
