@@ -261,7 +261,7 @@ export default function Dashboard() {
         </div>
       </div>
       {/* Side Content */}
-      <div className=" p-4 w-1/4 md:block hidden sticky min-w-fit top-0 max-h-screen overflow-y-auto">
+      <div className=" p-4 w-1/4 md:block hidden sticky  top-0 max-h-screen overflow-y-auto">
         <h1 className="text-3xl mb-4 dark:text-white">Latest Posts</h1>
         <div className="flex flex-col gap-4">
           {demoPosts.map((post, i) => (

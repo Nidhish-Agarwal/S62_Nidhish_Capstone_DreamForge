@@ -12,7 +12,7 @@ import ReplyItem from "./ReplyItem";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Skeleton } from "@/components/ui/skeleton"; // ShadCN Skeleton for smoother loading
 
-const ReplyList = forwardRef(({ commentId }, ref) => {
+const ReplyList = forwardRef(({ commentId, updateCommentCount }, ref) => {
   const [replies, setReplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -65,6 +65,12 @@ const ReplyList = forwardRef(({ commentId }, ref) => {
     fetchReplies(false, nextPage);
   };
 
+  const updateReply = (updatedReply) => {
+    setReplies((prev) =>
+      prev.map((r) => (r._id === updatedReply._id ? updatedReply : r))
+    );
+  };
+
   return (
     <div className="pl-6 mt-2 space-y-4 border-l-2 border-muted/30">
       {loading ? (
@@ -82,7 +88,16 @@ const ReplyList = forwardRef(({ commentId }, ref) => {
       ) : (
         <div className="space-y-3">
           {replies.map((reply) => (
-            <ReplyItem key={reply._id} reply={reply} />
+            <ReplyItem
+              key={reply._id}
+              reply={reply}
+              updateReply={updateReply}
+              updateCommentCount={updateCommentCount}
+              commentId={commentId}
+              onDelete={(replyId) =>
+                setReplies((prev) => prev.filter((r) => r._id !== replyId))
+              }
+            />
           ))}
 
           {hasMore && (

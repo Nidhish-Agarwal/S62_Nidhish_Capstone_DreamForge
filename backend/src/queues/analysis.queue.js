@@ -59,11 +59,7 @@ const processJob = async (dreamId, userId, attempt = 1, isManual = false) => {
         analysis_is_retrying: false,
         analysis: analysis
           ? {
-              _id: analysis._id,
-              sentiment: analysis.sentiment,
-              keywords: analysis.keywords,
-              interpretation: analysis.interpretation,
-              image_prompt: analysis.image_prompt,
+              ...analysis,
               image_retry_count: 0,
               image_status: "pending",
             }
@@ -116,7 +112,7 @@ const processJob = async (dreamId, userId, attempt = 1, isManual = false) => {
 
       try {
         emitDreamUpdate(userId, dreamId, {
-          analysis_status: "processing",
+          analysis_status: "failed",
           analysis_is_retrying: false,
           analysis: null,
         });

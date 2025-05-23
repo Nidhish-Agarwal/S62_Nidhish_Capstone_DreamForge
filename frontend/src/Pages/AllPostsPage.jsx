@@ -2,29 +2,15 @@ import React, { useState, useEffect, useCallback } from "react";
 import PostCard from "../components/Cards/PostCard";
 import { useInView } from "react-intersection-observer";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-} from "@/components/ui/command";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import NoPosts from "../assets/lotties/NoPosts.json";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ArrowUpIcon } from "lucide-react";
+import { useSearchContext } from "../context/SearchContext";
+import { motion } from "framer-motion";
+import Lottie from "lottie-react";
 
 export default function AllPostsPage() {
   const [posts, setPosts] = useState([]);
@@ -34,47 +20,81 @@ export default function AllPostsPage() {
   const [error, setError] = useState(null);
   const { ref, inView } = useInView();
   const axiosPrivate = useAxiosPrivate();
+  const { filters } = useSearchContext();
 
-  const fetchPosts = useCallback(
-    async (pageToFetch = page) => {
-      if (!hasMore) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const params = { page: pageToFetch, limit: 10 };
-        const response = await axiosPrivate.get("community/post", { params });
-        const { posts: newPosts, currentPage, totalPages } = response.data;
+  const fetchPosts = async (pageToFetch = page) => {
+    setLoading(true);
+    setError(null);
 
-        setPosts((prev) =>
-          pageToFetch === 1 ? newPosts : [...prev, ...newPosts]
-        );
-        setHasMore(currentPage < totalPages);
-      } catch (err) {
-        setError("Unable to load posts.");
-        toast.error("Failed to fetch posts. Please try again.", {
-          description: "Please check your connection and try again later.",
-        });
-      } finally {
-        setLoading(false);
-      }
-    },
-    [hasMore, axiosPrivate]
-  );
-
-  useEffect(() => {
-    fetchPosts(page);
-  }, [page]);
-
-  // infinite scroll trigger
-  useEffect(() => {
-    if (inView && hasMore && !loading && !error) {
-      setPage((p) => p + 1);
+    const queryParams = new URLSearchParams({
+      sort: filters.sortOption,
+      search: filters.searchQuery,
+      likedOnly: filters.likedOnly.toString(),
+    });
+    if (filters.mood.length) {
+      queryParams.append("mood", filters.mood.join(","));
     }
-  }, [inView, hasMore, loading, error]);
+    if (filters.personalityType.length) {
+      queryParams.append(
+        "dream_personality_type",
+        filters.personalityType.join(",")
+      );
+    }
 
+    if (filters.date?.from) {
+      queryParams.append("from", filters.date.from.toISOString());
+    }
+
+    if (filters.date?.to) {
+      const endOfDay = new Date(filters.date.to);
+      endOfDay.setHours(23, 59, 59, 999);
+      queryParams.append("to", endOfDay.toISOString());
+    }
+
+    try {
+      const params = { page: pageToFetch, limit: 10 };
+      const response = await axiosPrivate.get(`community/post?${queryParams}`, {
+        params,
+      });
+      const { posts: newPosts, currentPage, totalPages } = response.data;
+
+      setPosts((prev) =>
+        pageToFetch === 1 ? newPosts : [...prev, ...newPosts]
+      );
+      setHasMore(currentPage < totalPages);
+    } catch (err) {
+      setError("Unable to load posts.");
+      toast.error("Failed to fetch posts. Please try again.", {
+        description: "Please check your connection and try again later.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🟢 Fetch whenever page/filters change
+  useEffect(() => {
+    if (hasMore || page === 1) {
+      fetchPosts(page);
+    }
+  }, [page, filters]);
+
+  // 🔁 Reset pagination on filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
+
+  // 👀 Infinite scroll trigger
+  useEffect(() => {
+    if (inView && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  }, [inView, hasMore]);
+
+  // 🔁 Retry from last known page
   const retryFetch = () => {
     setError(null);
-    fetchPosts();
+    fetchPosts(page);
   };
 
   const updatePost = (updatedPost) => {
@@ -82,8 +102,6 @@ export default function AllPostsPage() {
       prev.map((p) => (p._id === updatedPost._id ? updatedPost : p))
     );
   };
-
-  console.log(posts);
 
   // Post skeleton loading component
   const PostSkeleton = () => (
@@ -142,16 +160,26 @@ export default function AllPostsPage() {
           ))}
         </div>
       ) : posts.length === 0 ? (
-        <div className="text-center text-gray-600 py-20">
-          <p>No posts found.</p>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-muted-foreground text-sm text-center py-8 flex flex-col items-center"
+        >
+          <Lottie
+            animationData={NoPosts}
+            loop
+            autoplay
+            style={{ height: "300px", width: "300px" }}
+          />
+          <p>💭 No Posts yet. Be the first to post!</p>
           <Button
             onClick={() => setError(null) || setPage(1)}
             variant="secondary"
-            className="mt-2"
+            className="mt-2 "
           >
             Refresh
           </Button>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid grid-cols-1 gap-6 w-full max-w-xl">
           {posts.map((post) => (
@@ -180,7 +208,7 @@ export default function AllPostsPage() {
       )}
 
       {/* Back to Top */}
-      <Button
+      {/* <Button
         className="fixed bottom-20 right-7 rounded-full p-2 shadow-md backdrop-blur-lg bg-white/70 border border-gray-300 hover:bg-white transition"
         variant="ghost"
         onClick={() => {
@@ -189,7 +217,7 @@ export default function AllPostsPage() {
         }}
       >
         <ArrowUpIcon className="text-gray-700" />
-      </Button>
+      </Button> */}
     </div>
   );
 }

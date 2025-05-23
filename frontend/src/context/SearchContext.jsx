@@ -8,7 +8,9 @@ export const SearchProvider = ({ children }) => {
     searchQuery: "",
     sortOption: "newest", // e.g. "newest"
     likedOnly: false,
-    emotions: [],
+    mood: [],
+    personalityType: [],
+    date: {},
     status: [],
   });
 
@@ -21,7 +23,9 @@ export const SearchProvider = ({ children }) => {
       searchQuery: "",
       sortOption: "newest",
       likedOnly: false,
-      emotions: [],
+      mood: [],
+      personalityType: [],
+      date: {},
       status: [],
     });
   };
