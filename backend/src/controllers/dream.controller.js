@@ -4,67 +4,88 @@ const mongoose = require("mongoose");
 const { addAnalysisJob } = require("../queues/analysis.queue.js");
 const ProcessedDream = require("../models/processedDream.model.js");
 const { addImageJob } = require("../queues/image.queue.js");
+const { z } = require("zod");
+
+const moodLabels = ["Terrified", "Sad", "Neutral", "Happy", "Euphoric"];
+
+const schema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters."),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters."),
+  date: z.string().min(1, "Date is required."),
+  mood: z.enum(moodLabels),
+  intensity: z.number().min(0).max(100),
+  symbols: z.array(z.string()).optional(),
+  themes: z.array(z.string()).optional(),
+  characters: z.array(z.string()).optional(),
+  setting: z.array(z.string()).optional(),
+  notes_to_ai: z.string().optional(),
+  real_life_link: z.string().optional(),
+});
 
 const addRawDream = async (req, res) => {
   try {
-    const { title, description, emotions, dream_type, date } = req.body;
     const userId = req.userId;
-
-    // Validate required fields
-    if (!userId || !description || !date) {
-      return res
-        .status(400)
-        .json({ error: "User ID, description, and date are required." });
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required." });
     }
-
-    // Ensure user_id is a valid ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(400).json({ error: "Invalid user ID." });
     }
 
-    // Check if user exists
     const userExists = await User.findById(userId);
     if (!userExists) {
       return res.status(404).json({ error: "User not found." });
     }
 
-    // Validate emotions as an array
-    if (emotions && !Array.isArray(emotions)) {
-      return res.status(400).json({ error: "Emotions should be an array." });
+    // Validate the incoming body using Zod schema
+    const parsedData = schema.safeParse(req.body);
+    if (!parsedData.success) {
+      // Extract all error messages from zod error
+      const errorMessages = parsedData.error.errors
+        .map((e) => e.message)
+        .join(", ");
+      return res
+        .status(400)
+        .json({ error: `Validation failed: ${errorMessages}` });
     }
 
-    // Validate date format
-    const parsedDate = new Date(date);
+    // Parse and validate date separately as Date object
+    const parsedDate = new Date(parsedData.data.date);
     if (isNaN(parsedDate.getTime())) {
       return res.status(400).json({ error: "Invalid date format." });
     }
 
-    // Create and save the dream entry
-    const newDream = new RawDream({
+    // Build the new dream object to save
+    const newDreamData = {
       user_id: userId,
-      title,
-      description,
-      emotions,
-      dream_type,
+      title: parsedData.data.title,
+      description: parsedData.data.description,
       date: parsedDate,
-    });
+      mood: parsedData.data.mood,
+      intensity: parsedData.data.intensity,
+      symbols: parsedData.data.symbols || [],
+      themes: parsedData.data.themes || [],
+      characters: parsedData.data.characters || [],
+      setting: parsedData.data.setting || [],
+      notes_to_ai: parsedData.data.notes_to_ai || "",
+      real_life_link: parsedData.data.real_life_link || "",
+    };
 
+    const newDream = new RawDream(newDreamData);
     const savedDream = await newDream.save();
 
-    // Start async processing
-    // Add to processing queue
-    await addAnalysisJob(savedDream._id, req.userId);
-    // processDreamAnalysis(savedDream._id);
+    // Adding To queue for AI processing
+    await addAnalysisJob(savedDream._id, userId);
 
-    res.status(201).json({
+    return res.status(201).json({
       ...savedDream.toObject(),
       analysis_status: "processing",
     });
   } catch (error) {
     console.error("Error saving dream:", error);
-    res.status(500).json({
-      error: "Internal Server Error.",
-    });
+    return res.status(500).json({ error: "Internal Server Error." });
   }
 };
 
@@ -121,12 +142,16 @@ const getAllDreams = async (req, res) => {
     if (!req.userId) {
       return res.status(401).json({ error: "Unauthorized: Missing user ID" });
     }
-
     const search = req.query.search?.trim() || "";
     const sortOption = req.query.sort || "newest";
     const likedOnly = req.query.likedOnly === "true";
-    const emotions = req.query.emotions ? req.query.emotions.split(",") : [];
+    const mood = req.query.mood ? req.query.mood.split(",") : [];
+    const dream_personality_type = req.query.dream_personality_type
+      ? req.query.dream_personality_type.split(",")
+      : [];
     const status = req.query.status ? req.query.status.split(",") : [];
+    const from = req.query.from || "";
+    const to = req.query.to || "";
 
     const filter = {
       user_id: req.userId,
@@ -136,12 +161,18 @@ const getAllDreams = async (req, res) => {
       filter.isLiked = true;
     }
 
-    if (emotions.length > 0) {
-      filter.emotions = { $in: emotions };
+    if (mood.length > 0) {
+      filter.mood = { $in: mood };
     }
 
     if (status.length > 0) {
       filter.analysis_status = { $in: status };
+    }
+
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) filter.createdAt.$gte = new Date(from);
+      if (to) filter.createdAt.$lte = new Date(to);
     }
 
     if (search) {
@@ -150,6 +181,34 @@ const getAllDreams = async (req, res) => {
         { title: { $regex: search, $options: "i" } }, // case-insensitive search on title
         { description: { $regex: search, $options: "i" } }, // also search in description
       ];
+    }
+
+    const processedFilter = {};
+    if (dream_personality_type.length > 0) {
+      processedFilter["dream_personality_type.type"] = {
+        $in: dream_personality_type,
+      };
+    }
+
+    let matchingDreamIds = null;
+    if (Object.keys(processedFilter).length > 0) {
+      const matchedProcessed = await ProcessedDream.find(processedFilter)
+        .select("dream_id")
+        .lean();
+      matchingDreamIds = matchedProcessed.map((d) => d.dream_id.toString());
+
+      // If no matching dreams from processed side, early return
+      if (matchingDreamIds.length === 0) {
+        return res.json({
+          dreams: [],
+          totalPages: 0,
+          currentPage: 1,
+          totalItems: 0,
+        });
+      }
+
+      // Add to raw filter
+      filter._id = { $in: matchingDreamIds };
     }
 
     let sort = { createdAt: -1 };
@@ -171,6 +230,7 @@ const getAllDreams = async (req, res) => {
       limit,
       sort,
       select: "-__v -createdAt -updatedAt",
+      lean: true,
     });
 
     // If no dreams found, return an empty response
@@ -189,7 +249,9 @@ const getAllDreams = async (req, res) => {
     // Find corresponding processed dreams
     const processedDreams = await ProcessedDream.find({
       dream_id: { $in: rawDreamIds },
-    }).select("-__v -createdAt -updatedAt");
+    })
+      .select("-__v -createdAt -updatedAt")
+      .lean();
 
     // Create a map for quick lookup
     const processedMap = processedDreams.reduce((acc, curr) => {
@@ -202,22 +264,8 @@ const getAllDreams = async (req, res) => {
       const processed = processedMap[rawDream._id.toString()] || null;
 
       return {
-        ...rawDream.toObject(),
-        analysis_status: rawDream.analysis_status,
-        analysis: processed
-          ? {
-              _id: processed._id,
-              sentiment: processed.sentiment,
-              keywords: processed.keywords,
-              interpretation: processed.interpretation,
-              image_prompt: processed.image_prompt,
-              image_url: processed.image_url || null,
-              image_status: processed.image_status,
-              image_retry_count: processed.image_retry_count,
-              processed_at: processed.processed_at,
-              image_is_retrying: processed.image_is_retrying,
-            }
-          : null,
+        ...rawDream,
+        analysis: processed ? processed : null,
       };
     });
 

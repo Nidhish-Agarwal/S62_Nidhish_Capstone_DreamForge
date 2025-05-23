@@ -44,8 +44,6 @@ const processImageJob = async (
 
     const imageUrl = await generateGeminiImageAndUpload(prompt);
 
-    console.log("imageUrl", imageUrl);
-
     await ProcessedDream.findByIdAndUpdate(dreamId, {
       $set: {
         image_status: "completed",

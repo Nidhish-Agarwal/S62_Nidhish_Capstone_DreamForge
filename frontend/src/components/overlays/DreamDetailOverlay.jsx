@@ -1,30 +1,40 @@
+// We'll begin with the structure and the first sections:
+// Header, Sentiment Card, and Image Block with Prompt + Retry + Loading
+
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Doughnut } from "react-chartjs-2";
-import "chart.js/auto";
-import { FaEdit, FaArrowLeft, FaArrowRight } from "react-icons/fa";
 import { format } from "date-fns";
-import HeartIcon from "../icons/HeartIcon";
-import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { motion } from "framer-motion";
+import { FaArrowLeft, FaEdit, FaArrowRight } from "react-icons/fa";
+import { RotateCw, AlertCircle } from "lucide-react";
+import HeartIcon from "../icons/HeartIcon";
 import NoImage from "../../assets/No-Image.png";
-import { AlertCircle, RotateCw } from "lucide-react";
+import SentimentRadialChart from "../SentimentRadialChart";
+import VibeToneDisplay from "../VibeToneDisplay";
+import HighlightMoment from "../HighlightMoment";
+import { DPTCard } from "../DPTCard";
+import DreamMetaSection from "../DreamMetaSection";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 export default function DreamDetailsOverlay({
   dream,
@@ -32,62 +42,75 @@ export default function DreamDetailsOverlay({
   updateDream,
   onRetryImage,
   isRetryingImage,
+  handleLike,
+  liked,
 }) {
   const axiosPrivate = useAxiosPrivate();
-  const liked = dream.isLiked;
-  const positivePercentage = dream.analysis.sentiment.positive;
-  const negativePercentage = dream.analysis.sentiment.negative;
-  console.log(dream);
 
-  const handleLike = async (e) => {
-    e.stopPropagation();
-    try {
-      const response = await axiosPrivate.put(`/dream/${dream._id}/like`);
-      const updated = {
-        ...dream,
-        isLiked: response.data.isLiked,
-      };
-      updateDream(updated);
-    } catch (error) {
-      console.error("Error updating like:", error);
-    }
+  const MotionItem = motion(AccordionItem);
+
+  const deepAnalysisCards = [
+    {
+      title: "Symbol Meanings",
+      icon: "🧠",
+      text:
+        dream.analysis.deep_analysis?.symbol_meanings ||
+        "No symbol info available.",
+    },
+    {
+      title: "Emotion Journey",
+      icon: "💫",
+      text:
+        dream.analysis.deep_analysis?.emotion_journey ||
+        "No emotional insight found.",
+    },
+    {
+      title: "Psychological Roots",
+      icon: "🪞",
+      text:
+        dream.analysis.deep_analysis?.possible_psychological_roots ||
+        "No roots identified.",
+    },
+    {
+      title: "Mythical Archetypes",
+      icon: "🧙‍♂️",
+      text:
+        dream.analysis.deep_analysis?.mythical_archetypes ||
+        "No archetypes found.",
+    },
+    {
+      title: "What You Might Learn",
+      icon: "🧭",
+      text:
+        dream.analysis.deep_analysis?.what_you_might_learn ||
+        "No lesson extracted.",
+    },
+  ];
+
+  const moodEmojiMap = {
+    Neutral: "😐",
+    Terrified: "😭",
+    Euphoric: "🤩",
+    Sad: "😔",
+    Happy: "😊",
   };
 
-  const progressWidth = Math.max(positivePercentage, negativePercentage);
-  const emotion =
-    positivePercentage > negativePercentage ? "Positive" : "Negative";
-  const progressColor =
-    positivePercentage > negativePercentage ? "bg-green-400" : "bg-red-400";
-
-  const sentimentData = {
-    labels: ["Positive", "Negative", "Neutral"],
-    datasets: [
-      {
-        data: [
-          dream.analysis.sentiment.positive,
-          dream.analysis.sentiment.negative,
-          dream.analysis.sentiment.neutral,
-        ],
-        backgroundColor: ["#4CAF50", "#E63946", "#CCCCCC"],
-        hoverOffset: 4,
-      },
-    ],
-  };
+  const intensityPercent = Math.min(Math.max(dream.intensity, 0), 100);
 
   return (
     <Dialog open={true} onOpenChange={() => setOpenOverlay(false)}>
-      <DialogContent className="max-w-4xl w-full bg-gradient-to-br from-[#752345] to-[#352736] text-white p-0 overflow-hidden">
+      <DialogContent className="max-w-5xl w-full bg-gradient-to-br from-[#2b2b3f] to-[#161621] text-white overflow-hidden p-0">
         <ScrollArea className="max-h-[90vh] p-6">
-          <DialogHeader className="flex items-center justify-between">
+          <DialogHeader className="flex items-center justify-between mb-4">
             <FaArrowLeft
-              className="cursor-pointer"
               onClick={() => setOpenOverlay(false)}
+              className="cursor-pointer"
             />
             <div className="text-center">
-              <DialogTitle className="text-3xl font-bold">
+              <DialogTitle className="text-3xl font-bold font-serif tracking-wide">
                 {dream.title}
               </DialogTitle>
-              <p className="text-xs mt-1 text-gray-300">
+              <p className="text-xs mt-1 text-muted-foreground">
                 {format(new Date(dream.date), "dd MMM yyyy")}
               </p>
             </div>
@@ -105,42 +128,43 @@ export default function DreamDetailsOverlay({
             </TooltipProvider>
           </DialogHeader>
 
-          <div className="grid md:grid-cols-2 gap-6 mt-6">
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Left Block - Image + Sentiment Chart */}
             <motion.div
-              className="rounded-lg shadow-lg overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
+              className="rounded-lg shadow-xl bg-white/10 p-4"
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.6 }}
             >
-              <motion.div
-                className="relative rounded-lg shadow-lg overflow-hidden min-h-[300px] bg-black/30 flex items-center justify-center"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
+              <div className="rounded-xl overflow-hidden min-h-[250px] flex items-center justify-center bg-black/30 relative">
                 {dream.analysis.image_status === "processing" && (
-                  <div className="text-center space-y-2">
-                    <RotateCw className="h-10 w-10 animate-spin text-white mx-auto" />
-                    <p className="text-white">Generating dream image...</p>
+                  <div className="text-center space-y-3">
+                    <RotateCw className="animate-spin h-10 w-10 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      Generating dream image...
+                    </p>
                   </div>
                 )}
 
                 {dream.analysis.image_status === "failed" && (
-                  <div className="text-center space-y-2">
-                    <AlertCircle className="h-10 w-10 text-red-400 mx-auto" />
-                    <p className="text-white">Image generation failed</p>
+                  <div className="text-center space-y-3">
+                    <AlertCircle className="h-10 w-10 text-red-500 mx-auto" />
+                    <p className="text-sm text-destructive">
+                      Image generation failed
+                    </p>
+
                     {dream.analysis.image_is_retrying ? (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{
-                          duration: 0.5,
+                          duration: 0.6,
                           repeat: Infinity,
                           repeatType: "reverse",
                         }}
-                        className="flex items-center justify-center gap-2 text-yellow-400 text-sm"
+                        className="flex items-center justify-center gap-2 text-yellow-500 text-sm"
                       >
-                        <RotateCw className="animate-spin-slow h-5 w-5" />
+                        <RotateCw className="h-4 w-4 animate-spin-slow" />
                         Retrying in a few moments...
                       </motion.div>
                     ) : (
@@ -157,11 +181,11 @@ export default function DreamDetailsOverlay({
                               }
                               className="mx-auto"
                             >
-                              {isRetryingImage ? (
-                                <RotateCw className="h-5 w-5 animate-spin mr-2" />
-                              ) : (
-                                <RotateCw className="h-5 w-5 mr-2" />
-                              )}
+                              <RotateCw
+                                className={`h-4 w-4 mr-2 ${
+                                  isRetryingImage ? "animate-spin" : ""
+                                }`}
+                              />
                               {dream.analysis.image_retry_count >= 3
                                 ? "Max Retries"
                                 : "Retry Now"}
@@ -181,73 +205,204 @@ export default function DreamDetailsOverlay({
                 )}
 
                 {dream.analysis.image_status === "completed" && (
-                  <img
-                    src={dream.analysis.image_url || NoImage}
-                    alt="Dream visualization"
-                    className="w-full object-cover rounded-lg max-h-[400px]"
-                  />
+                  <div className="rounded-xl overflow-hidden border border-muted shadow-md">
+                    <img
+                      src={dream.analysis.image_url || NoImage}
+                      alt="Dream visualization"
+                      className="w-full h-auto max-h-[400px] object-cover transition-all duration-300 hover:scale-[1.01]"
+                    />
+                  </div>
                 )}
-              </motion.div>
-
-              <div className="bg-white/10 p-4 rounded-lg mt-4">
-                <h2 className="text-lg font-semibold">Sentiment Analysis:</h2>
-                <Doughnut data={sentimentData} />
               </div>
+              <p className="text-xs text-muted-foreground mt-2 italic">
+                <strong>Prompt:</strong> {dream.analysis.image_prompt}
+              </p>
+              <div className="mt-6 max-w-md mx-auto">
+                <SentimentRadialChart sentiment={dream.analysis.sentiment} />
+
+                {/* Mood + Intensity under chart */}
+                <div className="mt-6 space-y-4">
+                  <h4 className="text-md font-semibold text-white flex items-center gap-2">
+                    🎭 Mood + Intensity
+                  </h4>
+
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-flex items-center space-x-2 cursor-default select-none rounded-full bg-muted px-3 py-1">
+                          <span className="text-2xl">
+                            {moodEmojiMap[dream.mood] || "❓"}
+                          </span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {dream.mood || "Unknown"}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">
+                        <p>The emotional tone of the dream</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+
+                  <div>
+                    <div className="flex justify-between mb-1 text-xs text-muted-foreground">
+                      <span>Intensity</span>
+                      <span>{intensityPercent}%</span>
+                    </div>
+                    <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${intensityPercent}%`,
+                          background:
+                            "linear-gradient(90deg, #f43f5e, #fb7185, #f43f5e)",
+                          transition: "width 0.5s ease-in-out",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <DreamMetaSection dream={dream} />
             </motion.div>
 
+            {/* The right side (next): description, short interpretation, keywords, vibe, highlight) will follow in next step */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
+              className="space-y-6"
             >
-              <h2 className="text-xl font-semibold">Description:</h2>
-              <div className="bg-white/25 rounded-2xl px-5 py-6 mt-2">
-                <p className="text-gray-300">{dream.description}</p>
-              </div>
-              <h2 className="text-xl font-semibold mt-4">Meaning:</h2>
-              <div className="bg-white/25 rounded-2xl px-5 py-6 mt-2">
-                <p className="text-gray-300">{dream.analysis.interpretation}</p>
-              </div>
-              <h2 className="text-xl font-semibold mt-4">Keywords:</h2>
-              <div className="flex gap-2 mt-2 overflow-x-auto whitespace-nowrap pb-2">
-                {dream.analysis.keywords.map((tag) => (
-                  <Badge
-                    key={tag}
-                    className="bg-white/40 text-white rounded-full"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-              <h2 className="text-xl font-semibold mt-4">
-                {emotion === "Positive" ? "Positivity" : "Negativity"}
-              </h2>
-              <div className="w-full h-2 bg-black rounded overflow-hidden mt-2">
-                <motion.div
-                  className={`h-full ${progressColor}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressWidth}%` }}
-                  transition={{ duration: 1, ease: "easeInOut" }}
-                />
-              </div>
+              {/* Description */}
+              <section>
+                <h2 className="text-xl font-semibold mb-2 text-white">
+                  🌙 Description
+                </h2>
 
-              <p className="text-sm text-gray-300 mt-1">
-                {progressWidth}% {emotion}
-              </p>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  className="relative p-5 rounded-3xl bg-white/10 backdrop-blur-lg shadow-[0_0_30px_rgba(255,255,255,0.05)] border border-white/20 text-sm text-gray-200 max-w-2xl"
+                >
+                  <p>{dream.description}</p>
+
+                  {/* Optional speech bubble pointer */}
+                  <div className="absolute right-6 -bottom-3 w-4 h-4 rotate-45 bg-white/10 border-l border-b border-white/20 backdrop-blur-lg" />
+                </motion.div>
+              </section>
+
+              {/* Short Interpretation */}
+              <section className="mt-8">
+                <h2 className="text-xl font-semibold mb-2 text-white">
+                  💬 Short Interpretation
+                </h2>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 1.2, ease: "easeOut" }}
+                  className="relative p-5 rounded-3xl bg-white/10 backdrop-blur-lg shadow-[0_0_30px_rgba(255,255,255,0.05)] border border-white/20 text-sm text-gray-200 max-w-2xl"
+                >
+                  <p>{dream.analysis.short_interpretation}</p>
+
+                  {/* Optional speech bubble pointer */}
+                  <div className="absolute left-6 -bottom-3 w-4 h-4 rotate-45 bg-white/10 border-l border-b border-white/20 backdrop-blur-lg" />
+                </motion.div>
+              </section>
+
+              {/* Keywords */}
+              {dream.analysis?.keywords?.length > 0 && (
+                <section>
+                  <h2 className="text-xl font-semibold mb-1">🏷️ Keywords</h2>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {dream.analysis.keywords.map((word) => (
+                      <Badge
+                        key={word}
+                        className="bg-white/30 text-white backdrop-blur rounded-full text-xs px-3 py-1 hover:scale-105 transition-transform"
+                      >
+                        {word}
+                      </Badge>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* Sentiment Progress Bar */}
+              <section>
+                <h2 className="text-xl font-semibold mb-1">
+                  📊 Overall Sentiment
+                </h2>
+                <div className="relative w-full h-2 bg-white/20 rounded-full overflow-hidden mt-2">
+                  <motion.div
+                    className={`h-full ${
+                      dream.analysis.sentiment.positive >
+                      dream.analysis.sentiment.negative
+                        ? "bg-green-400"
+                        : "bg-red-400"
+                    }`}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: `${Math.max(
+                        dream.analysis.sentiment.positive,
+                        dream.analysis.sentiment.negative
+                      )}%`,
+                    }}
+                    transition={{ duration: 1, ease: "easeInOut" }}
+                  />
+                </div>
+                <p className="text-xs text-gray-300 mt-1">
+                  Positive: {dream.analysis.sentiment.positive}% | Negative:{" "}
+                  {dream.analysis.sentiment.negative}% | Neutral:{" "}
+                  {dream.analysis.sentiment.neutral}%
+                </p>
+              </section>
+
+              {/* Dream Personality Type */}
+              <DPTCard DPT={dream.analysis?.dream_personality_type} />
+
+              {/* Vibe & Tone */}
+              <VibeToneDisplay vibe={dream.analysis.vibe} />
+
+              {/* Highlight Moment */}
+              <HighlightMoment quote={dream.analysis.highlight} />
+
+              {/* Deep Analysis */}
+              <section className="mt-8">
+                <h2 className="text-2xl font-bold mb-4 text-white">
+                  🌌 Deep Dive Into Your Dream
+                </h2>
+
+                <Accordion type="multiple" className="space-y-4">
+                  {deepAnalysisCards.map((card, idx) => (
+                    <MotionItem
+                      key={card.title}
+                      value={card.title}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="border border-white/10 rounded-2xl backdrop-blur bg-white/5 text-white"
+                    >
+                      <AccordionTrigger className="p-4 text-left hover:bg-white/10 rounded-2xl transition-all">
+                        <span className="text-xl flex items-center gap-2">
+                          <motion.span
+                            whileHover={{ rotate: 10, scale: 1.2 }}
+                            transition={{ type: "spring", stiffness: 300 }}
+                          >
+                            {card.icon}
+                          </motion.span>{" "}
+                          {card.title}
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4 text-sm text-gray-200">
+                        {card.text}
+                      </AccordionContent>
+                    </MotionItem>
+                  ))}
+                </Accordion>
+              </section>
             </motion.div>
           </div>
-
-          <DialogFooter className="mt-6 flex justify-between">
-            <Button variant="ghost" className="text-gray-300 gap-2">
-              <FaArrowLeft /> Prev
-            </Button>
-            <Button className="bg-red-500 text-white gap-2">
-              <FaEdit /> Edit
-            </Button>
-            <Button variant="ghost" className="text-gray-300 gap-2">
-              Next <FaArrowRight />
-            </Button>
-          </DialogFooter>
         </ScrollArea>
       </DialogContent>
     </Dialog>

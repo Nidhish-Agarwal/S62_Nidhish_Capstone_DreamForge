@@ -11,25 +11,57 @@ const rawDreamSchema = new mongoose.Schema(
     title: {
       type: String,
       trim: true,
-      default: "", // Optional field
+      required: true,
     },
     description: {
       type: String,
       required: true,
       trim: true,
     },
-    emotions: {
-      type: [String],
-      default: [], // Array of emotions
-    },
-    dream_type: {
-      type: String,
-      trim: true,
-      default: "", // Optional field
-    },
     date: {
       type: Date,
       required: true,
+    },
+    mood: {
+      type: String,
+      enum: ["Terrified", "Sad", "Neutral", "Happy", "Euhporic"],
+      deafult: "Neutral",
+    },
+    intensity: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 50,
+    },
+
+    symbols: {
+      type: [String],
+      default: [],
+    },
+
+    themes: {
+      type: [String],
+      default: [],
+    },
+
+    characters: {
+      type: [String],
+      default: [],
+    },
+
+    setting: {
+      type: [String],
+      default: [],
+    },
+
+    notes_to_ai: {
+      type: String,
+      default: "",
+    },
+
+    real_life_link: {
+      type: String,
+      default: "",
     },
     analysis_status: {
       type: String,

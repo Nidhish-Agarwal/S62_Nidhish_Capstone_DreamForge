@@ -11,6 +11,8 @@ const {
   getReplies,
   addReply,
   commentReact,
+  editComment,
+  deleteComment,
 } = require("../controllers/post.controller.js");
 const verifyJWT = require("../middlewares/verifyJWT.js");
 
@@ -23,5 +25,7 @@ router.get("/:postId/comments", verifyJWT, getAllComments);
 router.get("/comment/:commentId/replies", verifyJWT, getReplies);
 router.post("/comment/:commentId/reply", verifyJWT, addReply);
 router.put("/comment/:id/react", verifyJWT, commentReact);
+router.put("/comment/:commentId", verifyJWT, editComment);
+router.delete("/comment/:commentId", verifyJWT, deleteComment);
 
 module.exports = router;

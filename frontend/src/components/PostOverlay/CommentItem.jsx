@@ -17,6 +17,12 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ChevronDown,
@@ -41,6 +47,10 @@ const CommentItem = ({
   onAddReply,
   activeReplyId,
   setActiveReplyId,
+  updateComment,
+  onDelete,
+  postId,
+  updateCommentCount,
 }) => {
   const auth = useAuth();
   const isOwner = auth.auth.userId === comment.user._id;
@@ -54,6 +64,9 @@ const CommentItem = ({
   const [likesCount, setLikesCount] = useState(comment.likes.length);
   const [dislikesCount, setDislikesCount] = useState(comment.dislikes.length);
   const [showReplies, setShowReplies] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(comment.text);
 
   const axiosPrivate = useAxiosPrivate();
   const replyListRef = useRef();
@@ -91,6 +104,40 @@ const CommentItem = ({
     } catch (error) {
       console.error(error);
       toast.error("Failed to add reply.");
+    }
+  };
+
+  const handleEdit = async () => {
+    try {
+      const res = await axiosPrivate.put(`/community/comment/${comment._id}`, {
+        text: editedText,
+      });
+      const updatedComment = {
+        ...comment,
+        text: res.data.text,
+        isEdited: true,
+      };
+      updateComment(updatedComment);
+      toast.success("Comment updated.");
+      setIsEditing(false);
+    } catch (err) {
+      toast.error(`Failed to update: ${err.message}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axiosPrivate.delete(`/community/comment/${comment._id}`, {
+        params: {
+          postId: postId,
+        },
+      });
+      // Remove the comment from the UI
+      onDelete(comment._id);
+      updateCommentCount("decrement");
+      toast.success("Comment deleted.");
+    } catch (err) {
+      toast.error("Failed to delete comment.");
     }
   };
 
@@ -140,9 +187,12 @@ const CommentItem = ({
               <div>
                 <p className="font-semibold text-sm">
                   {comment.user.username}{" "}
-                  {isOwner && (
-                    <span className="text-xs text-muted-foreground">(you)</span>
-                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {comment.isEdited && (
+                      <span className=" italic">(edited)</span>
+                    )}
+                    {isOwner && <span>(you)</span>}
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {getTimeAgo(comment.createdAt || comment.date)}
@@ -182,17 +232,45 @@ const CommentItem = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setIsEditing(true)}
+                  >
                     <Pencil className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Edit</TooltipContent>
               </Tooltip>
+
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <div className="flex flex-col gap-4">
+                        <h2 className="text-lg font-semibold">
+                          Confirm Delete
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Are you sure you want to delete this comment?
+                        </p>
+                        <div className="flex justify-end gap-2">
+                          <DialogClose asChild>
+                            <Button variant="ghost">Cancel</Button>
+                          </DialogClose>
+                          <Button variant="destructive" onClick={handleDelete}>
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </TooltipTrigger>
                 <TooltipContent>Delete</TooltipContent>
               </Tooltip>
@@ -202,7 +280,50 @@ const CommentItem = ({
       </CardHeader>
 
       <CardContent className="ml-9 pt-0 pb-0 px-4 text-gray-800 text-sm whitespace-pre-line">
-        {comment.text}
+        <AnimatePresence mode="wait">
+          {isEditing ? (
+            <motion.div
+              key="edit-mode"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col gap-2"
+            >
+              <textarea
+                className="w-full p-2 text-sm border border-gray-300 rounded-md resize-none"
+                value={editedText}
+                onChange={(e) => setEditedText(e.target.value)}
+                rows={3}
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={handleEdit}>
+                  Save
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditedText(comment.text);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="view-mode"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {comment.text}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </CardContent>
 
       <CardFooter className="ml-6 px-4 pt-0 pb-2 flex flex-wrap gap-3 text-muted-foreground">
@@ -232,18 +353,21 @@ const CommentItem = ({
       </CardFooter>
 
       <AnimatePresence>
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="px-4 pb-3 overflow-hidden"
-        >
-          <ReplyInput
-            placeholder={`Reply to ${comment.user.username}`}
-            onSubmit={handleReplySubmit}
-            onCancel={() => setActiveReplyId(null)}
-          />
-        </motion.div>
+        {activeReplyId === comment._id && (
+          <motion.div
+            key="reply-input"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="px-4 pb-3 overflow-hidden"
+          >
+            <ReplyInput
+              placeholder={`Reply to ${comment.user.username}`}
+              onSubmit={handleReplySubmit}
+              onCancel={() => setActiveReplyId(null)}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {comment.replies?.length > 0 && (
@@ -268,12 +392,26 @@ const CommentItem = ({
           <AnimatePresence>
             {showReplies && (
               <motion.div
+                key="reply-list"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-2"
               >
-                <ReplyList ref={replyListRef} commentId={comment._id} />
+                <ReplyList
+                  ref={replyListRef}
+                  commentId={comment._id}
+                  updateCommentCount={(replyId) => {
+                    const newReplyArray = comment.replies.filter(
+                      (r) => r !== replyId
+                    );
+                    const updatedComment = {
+                      ...comment,
+                      replies: newReplyArray,
+                    };
+                    updateComment(updatedComment);
+                  }}
+                />
               </motion.div>
             )}
           </AnimatePresence>

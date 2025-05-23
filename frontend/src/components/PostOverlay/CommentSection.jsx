@@ -14,7 +14,7 @@ const SORT_OPTIONS = ["Most Recent", "Most Liked", "Oldest"];
 export default function CommentSection({
   postId,
   commentCount,
-  incrementCommentCount,
+  updateCommentCount,
 }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,13 +74,19 @@ export default function CommentSection({
     fetchComments({ pageParam: nextPage });
   };
 
+  const updateComment = (updatedComment) => {
+    setComments((prev) =>
+      prev.map((c) => (c._id === updatedComment._id ? updatedComment : c))
+    );
+  };
+
   return (
     <div className="space-y-6">
       <CommentInput
         postId={postId}
         onCommentAdded={(newComment) => {
           setComments((prev) => [newComment, ...prev]);
-          incrementCommentCount();
+          updateCommentCount("increment");
         }}
       />
 
@@ -166,9 +172,17 @@ export default function CommentSection({
                 transition={{ duration: 0.25 }}
               >
                 <CommentItem
+                  postId={postId}
                   comment={comment}
                   activeReplyId={activeReplyId}
                   setActiveReplyId={setActiveReplyId}
+                  updateComment={updateComment}
+                  updateCommentCount={updateCommentCount}
+                  onDelete={(commentId) =>
+                    setComments((prev) =>
+                      prev.filter((c) => c._id !== commentId)
+                    )
+                  }
                   onAddReply={(commentId, replyId) =>
                     setComments((prev) =>
                       prev.map((c) =>

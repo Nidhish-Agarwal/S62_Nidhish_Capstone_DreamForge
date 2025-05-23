@@ -1,5 +1,6 @@
 const Comment = require("../models/Comment.model.js");
 const CommunityPost = require("../models/CommunityPost.model.js");
+const ProcessedDream = require("../models/processedDream.model.js");
 const User = require("../models/user.model.js");
 const mongoose = require("mongoose");
 
@@ -64,24 +65,144 @@ const createCommunityPost = async (req, res) => {
 
 const getCommunityPosts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1; // Default to page 1
-    const limit = parseInt(req.query.limit) || 10; // Default to 10 posts per page
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const likedOnly = req.query.likedOnly === "true";
+    const bookmarkedOnly = req.query.bookmarkedOnly === "true";
+    const sortOption = req.query.sort || "newest";
+    const mood = req.query.mood ? req.query.mood.split(",") : [];
+    const dream_personality_type = req.query.dream_personality_type
+      ? req.query.dream_personality_type.split(",")
+      : [];
+    const from = req.query.from || "";
+    const to = req.query.to || "";
+    const search = req.query.search || "";
+
+    const filter = {};
+
+    if (likedOnly && req.userId) {
+      filter.likes = { $in: [req.userId] };
+    }
+
+    if (bookmarkedOnly && req.userId) {
+      filter.bookmarks = { $in: [req.userId] };
+    }
+
+    if (from || to) {
+      filter.createdAt = {};
+      if (from) filter.createdAt.$gte = new Date(from);
+      if (to) filter.createdAt.$lte = new Date(to);
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { caption: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Mood filtering
+    let matchedDreamIds = null;
+    if (mood.length > 0) {
+      const matchedDreams = await RawDream.find({ mood: { $in: mood } })
+        .select("_id")
+        .lean();
+      matchedDreamIds = matchedDreams.map((d) => d._id);
+    }
+
+    // Personality type filtering
+    let personalityMatchedDreamIds = null;
+    if (dream_personality_type.length > 0) {
+      const matchedProcessed = await ProcessedDream.find({
+        "dream_personality_type.type": { $in: dream_personality_type },
+      })
+        .select("dream_id")
+        .lean();
+      personalityMatchedDreamIds = matchedProcessed.map((d) => d.dream_id);
+    }
+
+    // Combine dream IDs
+    let finalDreamIds = null;
+    if (matchedDreamIds && personalityMatchedDreamIds) {
+      finalDreamIds = matchedDreamIds.filter((id) =>
+        personalityMatchedDreamIds.some(
+          (pid) => pid.toString() === id.toString()
+        )
+      );
+    } else {
+      finalDreamIds = matchedDreamIds || personalityMatchedDreamIds;
+    }
+
+    if (
+      (mood.length > 0 || dream_personality_type.length > 0) &&
+      finalDreamIds.length === 0
+    ) {
+      return res
+        .status(200)
+        .json({ posts: [], totalPages: 0, currentPage: page });
+    }
+
+    if (finalDreamIds && finalDreamIds.length > 0) {
+      filter.dream = { $in: finalDreamIds };
+    }
+
+    // Sorting
+    let sort = { createdAt: -1 };
+    switch (sortOption) {
+      case "oldest":
+        sort = { createdAt: 1 };
+        break;
+      case "mostLiked":
+        sort = { likeCount: -1, createdAt: -1 };
+        break;
+      case "mostCommented":
+        sort = { commentCount: -1, createdAt: -1 };
+        break;
+      case "mostBookmarked":
+        sort = { bookmarkCount: -1, createdAt: -1 };
+        break;
+    }
 
     const options = {
       page,
       limit,
-      sort: { createdAt: -1 }, // Latest posts first
+      sort,
       populate: [
         { path: "user", select: "username profileImage" },
-        { path: "dream", select: "title description" },
+        { path: "dream" },
       ],
+      lean: true,
     };
 
-    // Use the paginate method provided by the plugin
-    const result = await CommunityPost.paginate({}, options);
+    const result = await CommunityPost.paginate(filter, options);
+
+    const rawDreamIds = result.docs.map((p) => p.dream._id);
+
+    const processedDreams = await ProcessedDream.find({
+      dream_id: { $in: rawDreamIds },
+    })
+      .select("-__v -createdAt -updatedAt")
+      .lean();
+
+    const processedMap = processedDreams.reduce((acc, curr) => {
+      acc[curr.dream_id.toString()] = curr;
+      return acc;
+    }, {});
+
+    const mergedPost = result.docs.map((post) => {
+      const processed = processedMap[post.dream._id.toString()] || null;
+      return {
+        ...post,
+        dream: {
+          ...post.dream,
+          analysis: processed,
+        },
+      };
+    });
 
     res.status(200).json({
-      posts: result.docs,
+      posts: mergedPost,
       totalPages: result.totalPages,
       currentPage: result.page,
     });
@@ -200,7 +321,7 @@ const addComment = async (req, res) => {
 
     res.status(201).json(comment);
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Error adding comment", error: error });
   }
 };
@@ -377,6 +498,110 @@ const commentReact = async (req, res) => {
   }
 };
 
+const editComment = async (req, res) => {
+  const userId = req.userId;
+  const { text } = req.body;
+  const { commentId } = req.params;
+
+  try {
+    // Validate user Id
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID is missing." });
+    }
+
+    // Validate the comment Id
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ message: "Invalid comment id" });
+    }
+
+    const comment = await Comment.findById(commentId);
+
+    if (!comment) {
+      return res.status(404).json({ message: "No comment found" });
+    }
+
+    // Check if the logged-in user is the comment owner
+    if (comment.user.toString() !== userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Not the comment owner." });
+    }
+
+    // Updating the text
+    comment.text = text;
+    comment.isEdited = true;
+
+    await comment.save();
+
+    return res
+      .status(200)
+      .json({ message: "Sucessfully updated the comment", text: comment.text });
+  } catch (er) {
+    console.error(er.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const deleteComment = async (req, res) => {
+  const userId = req.userId;
+  const { commentId } = req.params;
+  const { postId, parentId } = req.query;
+
+  try {
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID is missing." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ message: "Invalid comment id" });
+    }
+
+    const comment = await Comment.findById(commentId);
+    if (!comment) {
+      return res.status(404).json({ message: "No comment found" });
+    }
+
+    if (comment.user.toString() !== userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Not the comment owner." });
+    }
+
+    const replyCount = comment.replies?.length || 0;
+
+    // Delete all replies if it's a parent comment
+    if (replyCount > 0) {
+      await Comment.deleteMany({ _id: { $in: comment.replies } });
+    }
+
+    // Top-level comment
+    if (postId) {
+      await CommunityPost.findByIdAndUpdate(postId, {
+        $pull: { comments: comment._id },
+        $inc: { commentCount: -1 },
+      });
+    }
+
+    // Reply
+    if (parentId) {
+      await Comment.findByIdAndUpdate(parentId, {
+        $pull: { replies: comment._id },
+      });
+    }
+
+    await comment.deleteOne();
+
+    return res.status(200).json({ message: "Comment deleted successfully." });
+  } catch (err) {
+    console.error(err.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   createCommunityPost,
   getCommunityPosts,
@@ -387,4 +612,6 @@ module.exports = {
   getReplies,
   addReply,
   commentReact,
+  editComment,
+  deleteComment,
 };

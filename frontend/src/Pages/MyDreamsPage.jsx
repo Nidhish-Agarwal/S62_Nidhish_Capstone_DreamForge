@@ -21,6 +21,14 @@ const MyDreamsPage = () => {
 
   useDreamSocket(setDreams);
 
+  const updateDream = (updatedDream) => {
+    setDreams((prevDreams) =>
+      prevDreams.map((dream) =>
+        dream._id === updatedDream._id ? updatedDream : dream
+      )
+    );
+  };
+
   // Fetch dreams (infinite scroll)
   useEffect(() => {
     const fetchDreams = async () => {
@@ -34,12 +42,28 @@ const MyDreamsPage = () => {
           likedOnly: filters.likedOnly.toString(),
         });
 
-        if (filters.emotions.length) {
-          queryParams.append("emotions", filters.emotions.join(","));
+        if (filters.mood.length) {
+          queryParams.append("mood", filters.mood.join(","));
+        }
+        if (filters.personalityType.length) {
+          queryParams.append(
+            "dream_personality_type",
+            filters.personalityType.join(",")
+          );
         }
 
         if (filters.status.length) {
           queryParams.append("status", filters.status.join(","));
+        }
+
+        if (filters.date?.from) {
+          queryParams.append("from", filters.date.from.toISOString());
+        }
+
+        if (filters.date?.to) {
+          const endOfDay = new Date(filters.date.to);
+          endOfDay.setHours(23, 59, 59, 999);
+          queryParams.append("to", endOfDay.toISOString());
         }
 
         const response = await axiosPrivate.get(
@@ -69,7 +93,7 @@ const MyDreamsPage = () => {
     setPage(1);
   }, [filters]);
 
-  // Trigger next page when ref comes into view
+  //Trigger next page when ref comes into view
   useEffect(() => {
     if (inView && hasMore) {
       setPage((prev) => prev + 1);
@@ -100,7 +124,12 @@ const MyDreamsPage = () => {
       ) : dreams.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 z-0">
           {dreams.map((dream) => (
-            <DreamCard key={dream._id} dream={dream} onRetry={handleRetry} />
+            <DreamCard
+              key={dream._id}
+              dream={dream}
+              onRetry={handleRetry}
+              updateDream={updateDream}
+            />
           ))}
           {hasMore && (
             <div ref={ref} className="col-span-full flex justify-center">

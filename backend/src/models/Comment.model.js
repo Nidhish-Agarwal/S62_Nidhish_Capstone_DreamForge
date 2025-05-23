@@ -35,6 +35,10 @@ const CommentSchema = new mongoose.Schema(
         default: null,
       },
     ], // **One-level replies only**
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

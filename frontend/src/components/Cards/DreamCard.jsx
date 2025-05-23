@@ -20,7 +20,6 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
   const [isRetrying, setIsRetrying] = useState(false);
   const [openOverlay, setOpenOverlay] = useState(false);
   const axiosPrivate = useAxiosPrivate();
-  // console.log(dream);
 
   // Ensure that sentiment and progressWidth are safely accessed
   const positivePercentage = dream.analysis?.sentiment?.positive || 0;
@@ -178,7 +177,7 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
                   analysis_status === "completed" ? "success" : "destructive"
                 }
               >
-                {analysis_status.toUpperCase()}
+                {analysis_status?.toUpperCase()}
               </Badge>
             </div>
 
@@ -230,6 +229,8 @@ const DreamCard = ({ dream, onRetry, updateDream }) => {
           updateDream={updateDream}
           onRetryImage={handleRetryImage}
           isRetryingImage={isRetryingImage}
+          handleLike={handleLike}
+          liked={dream.isLiked}
         />
       )}
     </>

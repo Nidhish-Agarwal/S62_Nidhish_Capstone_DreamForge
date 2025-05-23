@@ -83,7 +83,7 @@ const PostCard = ({ post, updatePost }) => {
         className="w-full max-w-2xl"
       >
         <Card
-          className="relative flex gap-2 items-center justify-between bg-gradient-to-r from-[#3a1c3f] via-[#4a254a] to-[#2c1230] text-white p-4 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] border border-white/10 hover:border-white/20 cursor-pointer"
+          className="relative max-h-52 flex gap-2 items-center justify-between bg-gradient-to-r from-[#3a1c3f] via-[#4a254a] to-[#2c1230] text-white p-4 rounded-2xl shadow-[0_0_20px_rgba(255,255,255,0.05)] hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] border border-white/10 hover:border-white/20 cursor-pointer"
           onClick={() => setIsOverlayOpen(true)}
         >
           {/* Left Side */}
@@ -122,7 +122,7 @@ const PostCard = ({ post, updatePost }) => {
 
             {/* Badges (Optional for dream tags/emotions) */}
 
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -134,7 +134,7 @@ const PostCard = ({ post, updatePost }) => {
               <Badge variant="secondary" className="bg-indigo-700 text-white">
                 Peaceful-to change
               </Badge>
-            </motion.div>
+            </motion.div> */}
 
             {/* Stats */}
             <CardFooter className="p-0" onClick={(e) => e.stopPropagation()}>
@@ -187,11 +187,11 @@ const PostCard = ({ post, updatePost }) => {
           </div>
 
           {/* Right Side (Image) */}
-          <div className="w-1/3 h-full">
+          <div className="w-1/3 max-h-44">
             <img
-              src={image || NoImage}
+              src={post?.dream?.analysis?.image_url || NoImage}
               alt="Dream visual"
-              className="w-full h-full rounded-lg object-cover transition-all duration-500 ease-in-out hover:brightness-110"
+              className="w-full max-h-44 rounded-lg object-cover transition-all duration-500 ease-in-out hover:brightness-110"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = NoImage;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FaHome,
   FaUser,
@@ -8,36 +8,78 @@ import {
   FaTrophy,
   FaQuestionCircle,
 } from "react-icons/fa";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
   AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Link, useNavigate } from "react-router-dom";
 import useLogout from "../../hooks/useLogout";
+import axios from "axios";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function SideBar({ currentPath }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const logout = useLogout();
+  const [user, setUser] = useState({});
+  const axiosPrivate = useAxiosPrivate();
+
+  useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
+    const getUsers = async () => {
+      try {
+        const response = await axiosPrivate.get("/user/get_user_data", {
+          signal: controller.signal,
+        });
+        // console.log(response.data);
+        isMounted && setUser(response.data.user);
+      } catch (err) {
+        // console.error(err);
+        if (axios.isCancel(err)) {
+          console.log("Request was canceled:", err.message);
+        } else if (err.response?.status === 403) {
+          console.log("You do not have permission to view this content.");
+        } else {
+          console.error("API Error:", err.message);
+          navigate("/login", { state: { from: location }, replace: true });
+        }
+      }
+    };
+
+    getUsers();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
+  }, []);
 
   const handleLogout = async () => {
     setIsOpen(false);
-    // Add logout logic here (e.g., API call, auth reset)
-    console.log("User logged out!");
     await logout();
     navigate("/");
   };
 
   return (
     <>
-      {/* Overlay for smaller screen */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-md z-40 md:hidden"
@@ -45,68 +87,75 @@ export default function SideBar({ currentPath }) {
         />
       )}
 
-      <div
-        className={`fixed md:static top-0 left-0 h-screen backdrop-blur-lg bg-white/10 border-r border-white/20 md:bg-transparent md:translate-x-0 z-50 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+      <motion.div
+        initial={{ x: -100, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 80 }}
+        className={cn(
+          "fixed md:static w-56 top-0 left-0 h-screen bg-white/10 border-r border-white/20 md:bg-transparent z-50 transition-transform duration-300 font-Jaldi dark:text-white",
+          {
+            "-translate-x-full md:translate-x-0": !isOpen,
+          }
+        )}
       >
-        <div className="flex flex-col h-full p-6 font-Jaldi dark:text-white ">
-          {/* X button visible on smaller screens */}
+        <div className="flex flex-col h-full p-6">
           <button
             className="md:hidden text-gray-300 self-end text-4xl hover:text-white absolute top-1 left-5"
             onClick={() => setIsOpen(false)}
           >
             &times;
           </button>
-          {/* User Profile */}
+
           <div className="flex items-center mb-6">
-            <img
-              src="https://randomuser.me/api/portraits/men/1.jpg"
-              alt="Profile"
-              className="w-14 h-14 rounded-full border border-white/30"
-            />
-            <div className="ml-4">
-              <h2 className="text-xl ">John Smith</h2>
-              <p className="text-xs dark:text-gray-300 text-gray-500">
-                Spooky Dreamer
-              </p>
-            </div>
+            <Avatar className="w-14 h-14">
+              <AvatarImage src={user.profileImage} alt="Profile Picture" />
+              <AvatarFallback className="text-gray-600 dark:text-white font-bold text-2xl">
+                {user?.username
+                  ? user.username
+                      .split(" ")
+                      .map((word) => word[0])
+                      .join("")
+                      .toUpperCase()
+                  : "?"}
+              </AvatarFallback>
+            </Avatar>
+            <h2 className="text-xl ml-4 truncate overflow-hidden whitespace-nowrap">
+              {user.username}
+            </h2>
           </div>
-          {/* Nav items */}
-          <nav>
-            <ul className="space-y-2">
-              <NavItem
-                icon={<FaHome />}
-                text="Dashboard"
-                pathName="dashboard"
-                currentPath={currentPath}
-              />
-              <NavItem
-                icon={<FaMoon />}
-                text="My Dreams"
-                pathName="mydreams"
-                currentPath={currentPath}
-              />
-              <NavItem
-                icon={<FaGlobe />}
-                text="Community"
-                pathName="community"
-                currentPath={currentPath}
-              />
-              <NavItem
-                icon={<FaTrophy />}
-                text="Gamification"
-                pathName="gamification"
-                currentPath={currentPath}
-                disabled={true}
-                tooltip="Coming soon!"
-              />
-            </ul>
+
+          <nav className="space-y-2">
+            <NavItem
+              icon={<FaHome />}
+              text="Dashboard"
+              pathName="dashboard"
+              currentPath={currentPath}
+            />
+            <NavItem
+              icon={<FaMoon />}
+              text="My Dreams"
+              pathName="mydreams"
+              currentPath={currentPath}
+            />
+            <NavItem
+              icon={<FaGlobe />}
+              text="Community"
+              pathName="community"
+              currentPath={currentPath}
+            />
+            <NavItem
+              icon={<FaTrophy />}
+              text="Gamification"
+              pathName="gamification"
+              currentPath={currentPath}
+              disabled
+              tooltip="Coming soon!"
+            />
           </nav>
 
           <hr className="my-2 dark:border-white/20 border-black" />
 
-          <ul className="space-y-2">
+          <nav className="space-y-2">
             <NavItem
               icon={<FaUser />}
               text="Profile"
@@ -119,61 +168,49 @@ export default function SideBar({ currentPath }) {
               pathName="help"
               currentPath={currentPath}
             />
-          </ul>
+          </nav>
 
-          {/* <ul className="mt-auto">
-            <NavItem
-              icon={<FaSignOutAlt />}
-              text="Logout"
-              pathName="logout"
-              currentPath={currentPath}
-            />
-          </ul> */}
-          <ul className="mt-auto">
-            <li className="relative group">
-              <AlertDialog>
-                <AlertDialogTrigger className="w-full">
-                  <div
-                    // onClick={() => setIsLogoutOpen(true)}
-                    className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer"
-                  >
-                    <span className="text-sm mr-2">
-                      <FaSignOutAlt />
-                    </span>
+          <div className="mt-auto">
+            <AlertDialog>
+              <AlertDialogTrigger className="w-full">
+                <div className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer">
+                  <span className="text-sm mr-2">
+                    <FaSignOutAlt />
+                  </span>
+                  Logout
+                </div>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="dark:bg-white/10 backdrop-blur-lg">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="dark:text-white">
+                    Confirm Logout?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to logout?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="dark:text-white">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction onClick={handleLogout}>
                     Logout
-                  </div>
-                </AlertDialogTrigger>
-
-                <AlertDialogContent className="dark:bg-white/10 backdrop-blur-lg">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="dark:text-white">
-                      Confirm Logout?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure that you want to Logout?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="dark:text-white">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </li>
-          </ul>
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
-      </div>
-      {/* Hamburger menu visible on smaller screens */}
+      </motion.div>
+
       <button
         onClick={() => setIsOpen(true)}
-        type="button"
-        className={`fixed top-4 left-4 md:hidden z-50 text-gray-200 hover:text-white focus:outline-none ${
-          isOpen ? "hidden" : ""
-        }`}
+        className={cn(
+          "fixed top-4 left-4 md:hidden z-50 text-gray-200 hover:text-white focus:outline-none",
+          {
+            hidden: isOpen,
+          }
+        )}
         aria-controls="mobile-menu"
         aria-expanded={isOpen}
       >
@@ -197,27 +234,44 @@ export default function SideBar({ currentPath }) {
 }
 
 function NavItem({ icon, text, pathName, currentPath, disabled, tooltip }) {
-  return (
-    <li className="relative group">
-      <Link
-        to={disabled ? "#" : `/${pathName}`}
-        className={`flex items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 ${
-          disabled
-            ? "opacity-50 cursor-not-allowed pointer-events-none"
-            : currentPath.includes(pathName)
-            ? "dark:bg-white/20 bg-[#FC607F] text-white backdrop-blur-md shadow-lg"
-            : "dark:hover:bg-white/10 hover:bg-white/20"
-        }`}
-      >
-        <span className="text-sm mr-2">{icon}</span>
-        {text}
-      </Link>
-
-      {/* Tooltip for disabled state */}
-      {disabled && tooltip && (
-        <span className="absolute left-full ml-2 top-1/2 -translate-y-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-          {tooltip}
+  const content = (
+    <Link
+      to={disabled ? "#" : `/${pathName}`}
+      className={cn(
+        "flex items-center px-4 py-3 rounded-lg transition",
+        "text-gray-700 dark:text-gray-200",
+        {
+          "opacity-50 cursor-not-allowed pointer-events-none": disabled,
+          "dark:bg-white/20 bg-[#FC607F] text-white shadow-lg":
+            currentPath.includes(pathName),
+          "dark:hover:bg-white/10 hover:bg-white/20":
+            !currentPath.includes(pathName),
+        }
+      )}
+    >
+      <span className="text-sm mr-2">{icon}</span>
+      {text}
+      {disabled && (
+        <span className="ml-1" role="img" aria-label="disabled">
+          🚫
         </span>
+      )}
+    </Link>
+  );
+
+  return (
+    <li className="list-none">
+      {disabled ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>{content}</TooltipTrigger>
+            <TooltipContent side="right">
+              <p>{tooltip}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : (
+        content
       )}
     </li>
   );
