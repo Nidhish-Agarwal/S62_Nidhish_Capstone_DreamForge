@@ -5,70 +5,60 @@ const RawDream = require("../models/rawDream.model.js");
 const DreamPersonalityTypes = [
   {
     id: "dpt_visionary",
-    name: "The Visionary",
     short_description:
       "You see beyond reality. Your dreams often reveal abstract truths or future possibilities.",
     traits: ["creative", "introspective", "idealistic", "spiritual"],
   },
   {
     id: "dpt_wanderer",
-    name: "The Wanderer",
     short_description:
       "You're on a journey — emotionally, mentally, or spiritually. Your dreams often involve movement and discovery.",
     traits: ["curious", "independent", "restless", "thoughtful"],
   },
   {
     id: "dpt_guardian",
-    name: "The Guardian",
     short_description:
       "You dream of protection and responsibility. You often take care of others in your dreams.",
     traits: ["empathetic", "protective", "loyal", "self-sacrificing"],
   },
   {
     id: "dpt_shadow_walker",
-    name: "The Shadow Walker",
     short_description:
       "You face inner fears and buried truths. Your dreams explore the darker parts of your psyche.",
     traits: ["deep", "emotional", "brave", "complex"],
   },
   {
     id: "dpt_illusionist",
-    name: "The Illusionist",
     short_description:
       "You bend reality in your dreams. Surreal landscapes, paradoxes, and shifting identities are common.",
     traits: ["mystical", "imaginative", "enigmatic", "unpredictable"],
   },
   {
     id: "dpt_healer",
-    name: "The Healer",
     short_description:
       "Your dreams often deal with healing — emotionally or relationally. You bring peace to dream chaos.",
     traits: ["compassionate", "sensitive", "peace-seeking", "wise"],
   },
   {
     id: "dpt_seeker",
-    name: "The Seeker",
     short_description:
       "You search for meaning, signs, or answers. Your dreams are full of symbols and unanswered questions.",
     traits: ["philosophical", "spiritual", "analytical", "curious"],
   },
   {
     id: "dpt_trickster",
-    name: "The Trickster",
     short_description:
       "Your dreams challenge logic and norms. You're playful, chaotic, or unpredictable even in sleep.",
     traits: ["clever", "rebellious", "chaotic", "sharp-minded"],
   },
   {
     id: "dpt_architect",
-    name: "The Architect",
     short_description:
       "You dream with structure. Recurring themes, patterns, or places reveal a deep inner design.",
     traits: ["analytical", "grounded", "methodical", "creative"],
   },
   {
     id: "dpt_echo",
-    name: "The Echo",
     short_description:
       "You reflect the emotional weight of your daily life. Your dreams echo the unresolved, unspoken, or suppressed.",
     traits: ["intuitive", "sensitive", "reflective", "emotional"],
@@ -111,7 +101,7 @@ const createAnalysisPrompt = (dream) => ({
         "Offer a few kind insights or reflections on what the dream may be trying to reveal or teach. Write 2–3 sentences in an open-ended and encouraging tone — like a gentle invitation to reflect.",
 
       dream_personality_type: {
-        type: "Choose one exact type from the predefined Dream Personality Types list.",
+        type: "Choose one exact type from the predefined Dream Personality Types list and return it's ID.",
         description:
           "Explain this personality type in a short 1–2 sentence paragraph that matches the traits shown in this dream.",
       },

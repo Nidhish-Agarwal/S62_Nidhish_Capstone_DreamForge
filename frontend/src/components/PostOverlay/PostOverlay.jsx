@@ -1,4 +1,11 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogClose,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Card,
   CardHeader,
@@ -17,7 +24,7 @@ import {
 } from "@/components/ui/tooltip";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatDistanceToNow } from "date-fns";
-import { MessageSquare, ArrowRight } from "lucide-react";
+import { MessageSquare, ArrowRight, Pencil, Trash2 } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
 import CommentSection from "./CommentSection";
 import HeartIcon from "../icons/HeartIcon";
@@ -27,6 +34,7 @@ import NoImage from "../../assets/No-Image.png";
 import DreamPersonalityTypes from "../../data/DreamPersonalityTypes.json";
 import DreamDetailsOverlay from "../overlays/DreamDetailOverlay";
 import { useState } from "react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 export default function PostOverlay({
   post,
@@ -34,7 +42,7 @@ export default function PostOverlay({
   handleLike,
   handleBookmark,
   updatePost,
-  onViewFullAnalysis,
+  onDelete,
 }) {
   const auth = useAuth();
   const {
@@ -53,6 +61,8 @@ export default function PostOverlay({
     bookmarks = [],
   } = post;
 
+  const axiosPrivate = useAxiosPrivate();
+
   const liked = likes.includes(auth.auth.userId);
   const bookmarked = bookmarks.includes(auth.auth.userId);
   const timeAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true });
@@ -60,6 +70,45 @@ export default function PostOverlay({
     (p) => p.id === dream.analysis?.dream_personality_type?.type
   );
   const [openOverlay, setOpenOverlay] = useState(false);
+
+  const isOwner = post.user._id === auth.auth.userId;
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState(post.caption);
+
+  const handleEdit = async () => {
+    try {
+      if (editedText.length < 1) {
+        toast.error("Length of the caption should be atleast 1 character");
+        return;
+      }
+
+      const res = await axiosPrivate.put(`/community/post/${post._id}`, {
+        newCaption: editedText,
+      });
+      const updatedPost = {
+        ...post,
+        caption: res.data.caption,
+        isEdited: true,
+      };
+      updatePost(updatedPost);
+      toast.success("Post updated.");
+      setIsEditing(false);
+    } catch (err) {
+      toast.error(`Failed to update: ${err.message}`);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await axiosPrivate.delete(`/community/post/${post._id}`);
+      // Remove the post from the UI
+      onDelete(post._id);
+
+      toast.success("Post deleted.");
+    } catch (err) {
+      toast.error(`Failed to delete Post. ${err.message}`);
+    }
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -79,23 +128,90 @@ export default function PostOverlay({
         >
           <Card className="flex flex-col flex-grow">
             {/* Header */}
-            <CardHeader className="flex flex-row items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Avatar>
-                  <AvatarImage src={user.profileImage} />
-                  <AvatarFallback>
-                    {user.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-base">{user.username}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {timeAgo}{" "}
-                    {isEdited && <span className="italic">(edited)</span>}
-                  </p>
+            <DialogTitle>
+              <CardHeader className="flex flex-row items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <Avatar>
+                    <AvatarImage src={user.profileImage} />
+                    <AvatarFallback>
+                      {user.username.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-semibold text-base">{user.username}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {timeAgo}{" "}
+                      {isEdited && <span className="italic">(edited)</span>}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
+                {isOwner && (
+                  <div className="ml-auto flex gap-1">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsEditing(true);
+                            }}
+                          >
+                            <Pencil className="w-4 h-4 text-muted-foreground" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit</TooltipContent>
+                      </Tooltip>
+
+                      <Dialog>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </DialogTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent>Delete</TooltipContent>
+                        </Tooltip>
+
+                        <DialogContent onClick={(e) => e.stopPropagation()}>
+                          <div className="flex flex-col gap-4">
+                            <DialogTitle className="text-lg font-semibold">
+                              Confirm Delete
+                            </DialogTitle>
+
+                            <DialogDescription className="text-sm text-muted-foreground">
+                              Are you sure you want to delete this Post?
+                            </DialogDescription>
+                            <div className="flex justify-end gap-2">
+                              <DialogClose asChild>
+                                <Button variant="ghost">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button
+                                  variant="destructive"
+                                  onClick={handleDelete}
+                                >
+                                  Delete
+                                </Button>
+                              </DialogClose>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TooltipProvider>
+                  </div>
+                )}
+              </CardHeader>
+            </DialogTitle>
 
             {/* Image */}
             <div className="w-full max-h-[400px] overflow-hidden bg-black">
@@ -107,6 +223,7 @@ export default function PostOverlay({
             </div>
 
             {/* Content */}
+
             <CardContent className="px-4 py-3">
               {dream?.title && (
                 <motion.p
@@ -117,9 +234,60 @@ export default function PostOverlay({
                   {dream.title}
                 </motion.p>
               )}
-              {caption && (
-                <p className="mb-3 text-base leading-relaxed">{caption}</p>
-              )}
+              {/* Caption */}
+              <AnimatePresence mode="wait">
+                {isEditing ? (
+                  <motion.div
+                    key="edit-mode"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex flex-col gap-2 "
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <textarea
+                      className="w-full p-2 text-sm border border-gray-300 text-black  rounded-md resize-none"
+                      value={editedText}
+                      onChange={(e) => setEditedText(e.target.value)}
+                      rows={3}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit();
+                        }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsEditing(false);
+                          setEditedText(post.caption);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="view-mode"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="mb-3 text-base leading-relaxed"
+                  >
+                    {post.caption}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Mood & Vibe */}
               <div className="flex items-center gap-2 mb-3">

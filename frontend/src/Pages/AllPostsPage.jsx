@@ -187,7 +187,13 @@ export default function AllPostsPage() {
               key={post._id}
               className="animate-fade-in-up transition-all duration-500"
             >
-              <PostCard post={post} updatePost={updatePost} />
+              <PostCard
+                post={post}
+                updatePost={updatePost}
+                onDelete={(postId) =>
+                  setPosts((prev) => prev.filter((p) => p._id !== postId))
+                }
+              />
             </div>
           ))}
         </div>
