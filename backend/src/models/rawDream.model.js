@@ -24,7 +24,7 @@ const rawDreamSchema = new mongoose.Schema(
     },
     mood: {
       type: String,
-      enum: ["Terrified", "Sad", "Neutral", "Happy", "Euhporic"],
+      enum: ["Terrified", "Sad", "Neutral", "Happy", "Euphoric"],
       deafult: "Neutral",
     },
     intensity: {

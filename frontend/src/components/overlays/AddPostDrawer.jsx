@@ -215,6 +215,7 @@ const SelectDreamField = ({ selectedDream, setSelectedDream }) => {
 const AddPostDrawer = () => {
   const [selectedDream, setSelectedDream] = useState(null);
   const [caption, setCaption] = useState("");
+  const [title, setTitle] = useState("");
   const [hashtags, setHashtags] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -251,6 +252,15 @@ const AddPostDrawer = () => {
     if (!selectedDream) {
       newErrors.selectedDream = "Please select a dream.";
     }
+
+    if (!title.trim()) {
+      newErrors.title = "Title is required.";
+    } else if (title.trim().length < 5) {
+      newErrors.title = "Title must be at least 5 characters.";
+    } else if (title.trim().length > 30) {
+      newErrors.title = "Title must be less than 30 characters.";
+    }
+
     if (!caption.trim()) {
       newErrors.caption = "Caption is required.";
     } else if (caption.trim().length < 10) {
@@ -283,6 +293,7 @@ const AddPostDrawer = () => {
       const response = await axiosPrivate.post("community/post", {
         dreamId: selectedDream._id,
         caption,
+        title,
         hashtags,
       });
 
@@ -367,6 +378,19 @@ const AddPostDrawer = () => {
               />
               {isSubmitted && errors.selectedDream && (
                 <p className="text-red-500 text-sm">{errors.selectedDream}</p>
+              )}
+
+              {/* Title */}
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Title
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full border rounded-md p-2"
+              />
+              {isSubmitted && errors.title && (
+                <p className="text-red-500 text-sm">{errors.title}</p>
               )}
 
               {/* Caption */}

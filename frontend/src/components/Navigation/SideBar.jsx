@@ -80,6 +80,7 @@ export default function SideBar({ currentPath }) {
 
   return (
     <>
+      {/* Overlay for smaller screen */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-md z-40 md:hidden"
@@ -87,25 +88,20 @@ export default function SideBar({ currentPath }) {
         />
       )}
 
-      <motion.div
-        initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 80 }}
-        className={cn(
-          "fixed md:static w-56 top-0 left-0 h-screen bg-white/10 border-r border-white/20 md:bg-transparent z-50 transition-transform duration-300 font-Jaldi dark:text-white",
-          {
-            "-translate-x-full md:translate-x-0": !isOpen,
-          }
-        )}
+      <div
+        className={`fixed md:static top-0 left-0 h-screen backdrop-blur-lg bg-white/10 border-r border-white/20 md:bg-transparent md:translate-x-0 z-50 transition-transform duration-300 ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
       >
-        <div className="flex flex-col h-full p-6">
+        <div className="flex flex-col h-full p-6 font-Jaldi dark:text-white ">
+          {/* X button visible on smaller screens */}
           <button
             className="md:hidden text-gray-300 self-end text-4xl hover:text-white absolute top-1 left-5"
             onClick={() => setIsOpen(false)}
           >
             &times;
           </button>
-
+          {/* User Profile */}
           <div className="flex items-center mb-6">
             <Avatar className="w-14 h-14">
               <AvatarImage src={user.profileImage} alt="Profile Picture" />
@@ -123,39 +119,41 @@ export default function SideBar({ currentPath }) {
               {user.username}
             </h2>
           </div>
-
-          <nav className="space-y-2">
-            <NavItem
-              icon={<FaHome />}
-              text="Dashboard"
-              pathName="dashboard"
-              currentPath={currentPath}
-            />
-            <NavItem
-              icon={<FaMoon />}
-              text="My Dreams"
-              pathName="mydreams"
-              currentPath={currentPath}
-            />
-            <NavItem
-              icon={<FaGlobe />}
-              text="Community"
-              pathName="community"
-              currentPath={currentPath}
-            />
-            <NavItem
-              icon={<FaTrophy />}
-              text="Gamification"
-              pathName="gamification"
-              currentPath={currentPath}
-              disabled
-              tooltip="Coming soon!"
-            />
+          {/* Nav items */}
+          <nav>
+            <ul className="space-y-2">
+              <NavItem
+                icon={<FaHome />}
+                text="Dashboard"
+                pathName="dashboard"
+                currentPath={currentPath}
+              />
+              <NavItem
+                icon={<FaMoon />}
+                text="My Dreams"
+                pathName="mydreams"
+                currentPath={currentPath}
+              />
+              <NavItem
+                icon={<FaGlobe />}
+                text="Community"
+                pathName="community"
+                currentPath={currentPath}
+              />
+              <NavItem
+                icon={<FaTrophy />}
+                text="Gamification"
+                pathName="gamification"
+                currentPath={currentPath}
+                disabled={true}
+                tooltip="Coming soon!"
+              />
+            </ul>
           </nav>
 
           <hr className="my-2 dark:border-white/20 border-black" />
 
-          <nav className="space-y-2">
+          <ul className="space-y-2">
             <NavItem
               icon={<FaUser />}
               text="Profile"
@@ -168,49 +166,61 @@ export default function SideBar({ currentPath }) {
               pathName="help"
               currentPath={currentPath}
             />
-          </nav>
+          </ul>
 
-          <div className="mt-auto">
-            <AlertDialog>
-              <AlertDialogTrigger className="w-full">
-                <div className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer">
-                  <span className="text-sm mr-2">
-                    <FaSignOutAlt />
-                  </span>
-                  Logout
-                </div>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="dark:bg-white/10 backdrop-blur-lg">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="dark:text-white">
-                    Confirm Logout?
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to logout?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="dark:text-white">
-                    Cancel
-                  </AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>
+          {/* <ul className="mt-auto">
+            <NavItem
+              icon={<FaSignOutAlt />}
+              text="Logout"
+              pathName="logout"
+              currentPath={currentPath}
+            />
+          </ul> */}
+          <ul className="mt-auto">
+            <li className="relative group">
+              <AlertDialog>
+                <AlertDialogTrigger className="w-full">
+                  <div
+                    // onClick={() => setIsLogoutOpen(true)}
+                    className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer"
+                  >
+                    <span className="text-sm mr-2">
+                      <FaSignOutAlt />
+                    </span>
                     Logout
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        </div>
-      </motion.div>
+                  </div>
+                </AlertDialogTrigger>
 
+                <AlertDialogContent className="dark:bg-white/10 backdrop-blur-lg">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="dark:text-white">
+                      Confirm Logout?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure that you want to Logout?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="dark:text-white">
+                      Cancel
+                    </AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>
+                      Continue
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </li>
+          </ul>
+        </div>
+      </div>
+      {/* Hamburger menu visible on smaller screens */}
       <button
         onClick={() => setIsOpen(true)}
-        className={cn(
-          "fixed top-4 left-4 md:hidden z-50 text-gray-200 hover:text-white focus:outline-none",
-          {
-            hidden: isOpen,
-          }
-        )}
+        type="button"
+        className={`fixed top-4 left-4 md:hidden z-50 text-gray-200 hover:text-white focus:outline-none ${
+          isOpen ? "hidden" : ""
+        }`}
         aria-controls="mobile-menu"
         aria-expanded={isOpen}
       >

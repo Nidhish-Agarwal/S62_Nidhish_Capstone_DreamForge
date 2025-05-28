@@ -1,12 +1,13 @@
 const Comment = require("../models/Comment.model.js");
 const CommunityPost = require("../models/CommunityPost.model.js");
 const ProcessedDream = require("../models/processedDream.model.js");
+const RawDream = require("../models/rawDream.model.js");
 const User = require("../models/user.model.js");
 const mongoose = require("mongoose");
 
 const createCommunityPost = async (req, res) => {
   try {
-    const { dreamId, caption, hashtags } = req.body;
+    const { title, dreamId, caption, hashtags } = req.body;
     const userId = req.userId; // Extract user ID from request
 
     // Validate user ID
@@ -34,11 +35,17 @@ const createCommunityPost = async (req, res) => {
         .status(400)
         .json({ message: "Caption must be under 500 characters." });
     }
+    if (title && title.length > 30) {
+      return res
+        .status(400)
+        .json({ message: "Title must be under 30 characters." });
+    }
 
     // Create a new community post
     const newPost = new CommunityPost({
       user: userId,
       dream: dreamId,
+      title: title?.trim(),
       caption: caption?.trim() || "",
       hashtags: hashtags || [],
     });
@@ -70,6 +77,7 @@ const getCommunityPosts = async (req, res) => {
 
     const likedOnly = req.query.likedOnly === "true";
     const bookmarkedOnly = req.query.bookmarkedOnly === "true";
+    const authorOnly = req.query.authorOnly === "true";
     const sortOption = req.query.sort || "newest";
     const mood = req.query.mood ? req.query.mood.split(",") : [];
     const dream_personality_type = req.query.dream_personality_type
@@ -81,12 +89,32 @@ const getCommunityPosts = async (req, res) => {
 
     const filter = {};
 
-    if (likedOnly && req.userId) {
-      filter.likes = { $in: [req.userId] };
+    if (likedOnly || (bookmarkedOnly && req.userId)) {
+      const user = await User.findById(req.userId).select(
+        "likedPosts bookmarks"
+      );
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (likedOnly && !bookmarkedOnly) {
+        filter._id = { $in: user.likedPosts };
+      }
+
+      if (bookmarkedOnly && !likedOnly) {
+        filter._id = { $in: user.bookmarks };
+      }
+
+      if (bookmarkedOnly && likedOnly) {
+        // show only posts that are BOTH liked and bookmarked
+        const intersection = user.likedPosts.filter((id) =>
+          user.bookmarks.includes(id)
+        );
+        filter._id = { $in: intersection };
+      }
     }
 
-    if (bookmarkedOnly && req.userId) {
-      filter.bookmarks = { $in: [req.userId] };
+    if (authorOnly) {
+      filter.user = { $in: [req.userId] };
     }
 
     if (from || to) {
@@ -602,6 +630,111 @@ const deleteComment = async (req, res) => {
   }
 };
 
+const editPost = async (req, res) => {
+  const userId = req.userId;
+  const { newCaption } = req.body;
+  const { PostId } = req.params;
+
+  try {
+    // Validate user Id
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID is missing." });
+    }
+
+    if (newCaption.length < 1) {
+      return res.status(400).json({
+        message: "The length of caption should be atleast 1 character",
+      });
+    }
+
+    // Validate the comment Id
+    if (!mongoose.Types.ObjectId.isValid(PostId)) {
+      return res.status(400).json({ message: "Invalid post id" });
+    }
+
+    const post = await CommunityPost.findById(PostId);
+
+    if (!post) {
+      return res.status(404).json({ message: "No post found" });
+    }
+
+    // Check if the logged-in user is the comment owner
+    if (post.user.toString() !== userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: Not the post owner." });
+    }
+
+    // Updating the text
+    post.caption = newCaption;
+    post.isEdited = true;
+
+    await post.save();
+
+    return res.status(200).json({
+      message: "Sucessfully updated the comment",
+      caption: post.caption,
+    });
+  } catch (er) {
+    console.error(er.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const deletePost = async (req, res) => {
+  const userId = req.userId;
+  const { PostId } = req.params;
+
+  try {
+    if (!userId) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: User ID is missing." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(PostId)) {
+      return res.status(400).json({ message: "Invalid post ID." });
+    }
+
+    const post = await CommunityPost.findById(PostId);
+    if (!post) {
+      return res.status(404).json({ message: "Post not found." });
+    }
+
+    if (post.user.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Forbidden: Not the post owner." });
+    }
+
+    const comments = post.comments || [];
+
+    await Promise.all(
+      comments.map(async (id) => {
+        const comment = await Comment.findById(id);
+        if (!comment) return;
+
+        if (comment.replies?.length) {
+          await Comment.deleteMany({ _id: { $in: comment.replies } });
+        }
+
+        await Comment.deleteOne({ _id: comment._id });
+      })
+    );
+
+    await post.deleteOne();
+
+    return res.status(200).json({
+      message: "Post and all associated comments deleted successfully.",
+    });
+  } catch (err) {
+    console.error("Delete post error:", err.message);
+    return res.status(500).json({ message: "Internal server error." });
+  }
+};
+
 module.exports = {
   createCommunityPost,
   getCommunityPosts,
@@ -614,4 +747,6 @@ module.exports = {
   commentReact,
   editComment,
   deleteComment,
+  editPost,
+  deletePost,
 };

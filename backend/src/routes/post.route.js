@@ -13,6 +13,8 @@ const {
   commentReact,
   editComment,
   deleteComment,
+  editPost,
+  deletePost,
 } = require("../controllers/post.controller.js");
 const verifyJWT = require("../middlewares/verifyJWT.js");
 
@@ -27,5 +29,7 @@ router.post("/comment/:commentId/reply", verifyJWT, addReply);
 router.put("/comment/:id/react", verifyJWT, commentReact);
 router.put("/comment/:commentId", verifyJWT, editComment);
 router.delete("/comment/:commentId", verifyJWT, deleteComment);
+router.put("/post/:PostId", verifyJWT, editPost);
+router.delete("/post/:PostId", verifyJWT, deletePost);
 
 module.exports = router;

@@ -190,8 +190,9 @@ const TraitInfoMap = {
 
 // Helper to format type and get details
 const getDPTDetails = (typeId) => {
-  const formattedId = typeId.toLowerCase().replace(/\s+/g, "_");
-  return DreamPersonalityTypes.find((t) => t.id === formattedId);
+  return DreamPersonalityTypes.find(
+    (t) => t.id === typeId || t.name === typeId
+  );
 };
 
 const getGradient = (type) => {

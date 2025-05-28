@@ -45,6 +45,7 @@ export default function DreamDetailsOverlay({
   handleLike,
   liked,
 }) {
+  console.log(dream.analysis);
   const axiosPrivate = useAxiosPrivate();
 
   const MotionItem = motion(AccordionItem);
@@ -359,6 +360,7 @@ export default function DreamDetailsOverlay({
               </section>
 
               {/* Dream Personality Type */}
+
               <DPTCard DPT={dream.analysis?.dream_personality_type} />
 
               {/* Vibe & Tone */}
