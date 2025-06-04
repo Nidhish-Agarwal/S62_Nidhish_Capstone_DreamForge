@@ -69,7 +69,7 @@ export default function TopBar({ currentPath }) {
         <p className="text-gray-500 text-xs">{today}</p>
       </div>
 
-      <SearchAndFilterBar />
+      {showSearchBar && <SearchAndFilterBar />}
 
       {/* Center Section - Search Bar */}
 

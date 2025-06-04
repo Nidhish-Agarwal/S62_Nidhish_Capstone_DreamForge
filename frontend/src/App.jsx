@@ -16,6 +16,7 @@ import CommunityPage from "./Pages/CommunityPage";
 import AllPostsPage from "./Pages/AllPostsPage";
 import MyPostsPage from "./Pages/MyPostsPage";
 import BookmarksPage from "./Pages/BookmarksPage";
+import HelpPage from "./Pages/HelpPage";
 
 function App() {
   return (
@@ -72,6 +73,16 @@ function App() {
               <Route path="bookmarks" element={<BookmarksPage />} />
             </Route>
           </Route>
+
+          <Route
+            path="/help"
+            element={
+              <MainLayout>
+                <HelpPage />
+                {/* here it i1Q2`1 `   */}
+              </MainLayout>
+            }
+          />
         </Route>
 
         {/* 404 Page */}

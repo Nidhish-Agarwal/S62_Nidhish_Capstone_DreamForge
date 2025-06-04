@@ -1,0 +1,47 @@
+[
+  {
+    "category": "🌙 Dream Input",
+    "questions": [
+      {
+        "question": "What is the 'Mood' slider for?",
+        "answer":
+          "It lets you express how the dream felt emotionally, from Terrified 😱 to Euphoric 🤩."
+      },
+      {
+        "question": "How do I select dream symbols?",
+        "answer":
+          "Tap on emoji buttons to represent symbols. You can also add your own with a meaning!"
+      }
+    ]
+  },
+  {
+    "category": "🧠 Dream Analysis",
+    "questions": [
+      {
+        "question": "What is a Dream Personality Type?",
+        "answer":
+          "We analyze your dream style and assign a fun persona like The Visionary or The Seeker."
+      },
+      {
+        "question": "Why is the image sometimes missing?",
+        "answer":
+          "The AI may take a few tries to generate your image. You can click 'Retry' if needed!"
+      }
+    ]
+  },
+  {
+    "category": "📣 Posting & Community",
+    "questions": [
+      {
+        "question": "Can others see my dream post?",
+        "answer":
+          "Yes, if you post to Community! You can also choose visibility while posting."
+      },
+      {
+        "question": "What happens when I like or bookmark a dream?",
+        "answer":
+          "Liking shows appreciation 💖, while bookmarking helps you save dreams to revisit later."
+      }
+    ]
+  }
+]
