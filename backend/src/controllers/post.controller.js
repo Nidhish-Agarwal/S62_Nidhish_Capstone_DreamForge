@@ -674,7 +674,7 @@ const editPost = async (req, res) => {
     await post.save();
 
     return res.status(200).json({
-      message: "Sucessfully updated the comment",
+      message: "Sucessfully updated the post",
       caption: post.caption,
     });
   } catch (er) {

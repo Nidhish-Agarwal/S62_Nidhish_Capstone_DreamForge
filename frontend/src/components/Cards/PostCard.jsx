@@ -496,7 +496,7 @@ const PostCard = ({ post, updatePost, onDelete }) => {
           handleLike={handleLike}
           handleBookmark={handleBookmark}
           updatePost={updatePost}
-          onDelete
+          onDelete={onDelete}
         />
       )}
     </div>

@@ -33,7 +33,7 @@ import {
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import dreamyBg from "../assets/lotties/dream-bg.json";
 import PreviewPanel from "./overlays/PreviewPanel";
-import SymbolThemeCharacterSettingFields from "./SymbolThemeCharaterSettingFields";
+import SymbolThemeCharacterSettingFields from "./widgets/SymbolThemeCharaterSettingFields";
 
 const moodOptions = [
   { emoji: "😭", label: "Terrified" },

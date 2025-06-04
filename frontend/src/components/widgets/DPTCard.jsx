@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import DreamPersonalityTypes from "../data/DreamPersonalityTypes.json";
+import DreamPersonalityTypes from "../../data/DreamPersonalityTypes.json";
 import { Info } from "lucide-react";
 import Lottie from "lottie-react";
-import sparkle from "../assets/lotties/sparkle.json";
+import sparkle from "../../assets/lotties/sparkle.json";
 import {
   HoverCard,
   HoverCardContent,
@@ -190,9 +190,9 @@ const TraitInfoMap = {
 
 // Helper to format type and get details
 const getDPTDetails = (typeId) => {
-  return DreamPersonalityTypes.find(
-    (t) => t.id === typeId || t.name === typeId
-  );
+  return DreamPersonalityTypes.find((t) => {
+    return t.id === typeId || t.name === typeId;
+  });
 };
 
 const getGradient = (type) => {
@@ -219,6 +219,7 @@ const getGradient = (type) => {
 export function DPTCard({ DPT }) {
   const typeId = DPT.type;
   const dpt = getDPTDetails(typeId);
+
   if (!dpt) return null;
 
   const gradient = getGradient(typeId);
@@ -228,6 +229,7 @@ export function DPTCard({ DPT }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 80 }}
+      whileHover={{ scale: 1.03 }}
       className={cn(
         "relative rounded-2xl p-6 overflow-hidden shadow-lg",
         gradient,

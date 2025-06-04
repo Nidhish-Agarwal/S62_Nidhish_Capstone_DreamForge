@@ -115,7 +115,10 @@ export default function SideBar({ currentPath }) {
                   : "?"}
               </AvatarFallback>
             </Avatar>
-            <h2 className="text-xl ml-4 truncate overflow-hidden whitespace-nowrap">
+            <h2
+              className="text-xl max-w-[100px] ml-4 truncate overflow-hidden whitespace-nowrap"
+              title={user.username}
+            >
               {user.username}
             </h2>
           </div>

@@ -29,10 +29,10 @@ import { FaArrowLeft, FaEdit, FaArrowRight } from "react-icons/fa";
 import { RotateCw, AlertCircle } from "lucide-react";
 import HeartIcon from "../icons/HeartIcon";
 import NoImage from "../../assets/No-Image.png";
-import SentimentRadialChart from "../SentimentRadialChart";
-import VibeToneDisplay from "../VibeToneDisplay";
-import HighlightMoment from "../HighlightMoment";
-import { DPTCard } from "../DPTCard";
+import SentimentRadialChart from "../widgets/SentimentRadialChart";
+import VibeToneDisplay from "../widgets/VibeToneDisplay";
+import HighlightMoment from "../widgets/HighlightMoment";
+import { DPTCard } from "../widgets/DPTCard";
 import DreamMetaSection from "../DreamMetaSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 

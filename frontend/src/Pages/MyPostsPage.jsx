@@ -12,7 +12,7 @@ import { useSearchContext } from "../context/SearchContext";
 import { motion } from "framer-motion";
 import Lottie from "lottie-react";
 
-export default function BookmarksPage() {
+export default function AllPostsPage() {
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
