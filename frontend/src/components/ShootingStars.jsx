@@ -1,9 +1,7 @@
-import React from "react";
-
 function ShootingStars() {
   return (
     <div>
-      {Array(5)
+      {Array(8)
         .fill(0)
         .map((_, i) => (
           <div

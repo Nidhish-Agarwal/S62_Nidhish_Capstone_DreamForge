@@ -36,7 +36,7 @@ const UserSchema = new mongoose.Schema(
     lastDreamDate: {
       type: Date, // Stores the date of the user's last dream entry
     },
-    streakCount: {
+    maxDreamStreak: {
       type: Number,
       default: 0, // Consecutive days of dream logging
     },

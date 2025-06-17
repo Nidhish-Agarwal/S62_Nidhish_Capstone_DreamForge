@@ -5,6 +5,9 @@ const {
   getAllDreams,
   toggleLike,
   retryImageGeneration,
+  dreamScope,
+  getDashboardInsights,
+  dashboardExplore,
 } = require("../controllers/dream.controller.js");
 
 // Middleware to verify the access token
@@ -17,5 +20,8 @@ router.get("/getdreams", verifyJWT, getAllDreams);
 router.post("/:id/retry", verifyJWT, retryAnalysis);
 router.put("/:id/like", verifyJWT, toggleLike);
 router.post("/retry-image/:id", verifyJWT, retryImageGeneration);
+router.get("/dreamscope", verifyJWT, dreamScope);
+router.get("/insights", verifyJWT, getDashboardInsights);
+router.get("/explore", verifyJWT, dashboardExplore);
 
 module.exports = router;
