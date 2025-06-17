@@ -95,3 +95,16 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a0a0a0; /* Slightly darker for better interaction */
 }
+
+
+/* Shooting star animation */
+@keyframes shooting-star {
+  0% {
+    transform: translate(0, 0) rotate(45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-300px, 300px) rotate(45deg); /* adjust as needed */
+    opacity: 0;
+  }
+}

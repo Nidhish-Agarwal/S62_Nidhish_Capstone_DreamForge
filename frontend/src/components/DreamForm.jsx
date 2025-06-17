@@ -58,7 +58,7 @@ const schema = z.object({
   real_life_link: z.string().optional(),
 });
 
-export default function DreamForm2({ onClose }) {
+export default function DreamForm({ onClose }) {
   const [loading, setLoading] = useState(false);
   const axiosPrivate = useAxiosPrivate();
   const today = new Date().toISOString().split("T")[0];

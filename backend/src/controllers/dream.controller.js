@@ -24,6 +24,51 @@ const schema = z.object({
   real_life_link: z.string().optional(),
 });
 
+const getCurrentStreak = (dreamDates) => {
+  const dates = new Set(
+    dreamDates.map((d) => new Date(d).toISOString().split("T")[0])
+  );
+
+  let streak = 0;
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const hasLoggedToday = dates.has(todayStr);
+
+  // Start from yesterday if user hasn't logged today's dream
+  let current = new Date();
+  if (!hasLoggedToday) {
+    current.setDate(current.getDate() - 1);
+  }
+
+  while (true) {
+    const dateStr = current.toISOString().split("T")[0];
+    if (dates.has(dateStr)) {
+      streak++;
+      current.setDate(current.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+
+  return { streak, hasLoggedToday };
+};
+
+const moodToIndex = {
+  Terrified: 0,
+  Sad: 1,
+  Neutral: 2,
+  Happy: 3,
+  Euphoric: 4,
+};
+const indexToMood = ["Terrified", "Sad", "Neutral", "Happy", "Euphoric"];
+const moodToEmoji = {
+  Terrified: "😭",
+  Sad: "😔",
+  Neutral: "😐",
+  Happy: "😊",
+  Euphoric: "🤩",
+};
+
 const addRawDream = async (req, res) => {
   try {
     const userId = req.userId;
@@ -34,8 +79,8 @@ const addRawDream = async (req, res) => {
       return res.status(400).json({ error: "Invalid user ID." });
     }
 
-    const userExists = await User.findById(userId);
-    if (!userExists) {
+    const user = await User.findById(userId);
+    if (!user) {
       return res.status(404).json({ error: "User not found." });
     }
 
@@ -75,6 +120,18 @@ const addRawDream = async (req, res) => {
 
     const newDream = new RawDream(newDreamData);
     const savedDream = await newDream.save();
+
+    const rawDreamData = await RawDream.find({ user_id: userId }, "date");
+
+    // Extract Dream dates to calculate streak
+    const dreamDates = rawDreamData.map((dream) => dream.date);
+
+    const { streak: currentStreak } = getCurrentStreak(dreamDates);
+
+    if (currentStreak > user.maxDreamStreak) {
+      user.maxDreamStreak = currentStreak;
+      await user.save();
+    }
 
     // Adding To queue for AI processing
     await addAnalysisJob(savedDream._id, userId);
@@ -304,10 +361,275 @@ const toggleLike = async (req, res) => {
   }
 };
 
+const dreamScope = async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Unauthorized: Missing user ID" });
+    }
+
+    const rawDreamData = await RawDream.find(
+      { user_id: req.userId },
+      "mood _id date"
+    );
+
+    // Extract Dream dates to calculate streak
+    const dreamDates = rawDreamData.map((dream) => dream.date);
+
+    const { streak: currentStreak, hasLoggedToday } =
+      getCurrentStreak(dreamDates);
+    // Extract dream IDs
+    const dreamIds = rawDreamData.map((dream) => dream._id);
+
+    // Extract mood list
+    const moodList = rawDreamData.map((dream) => dream.mood);
+
+    // Fetch corresponding sentiments from ProcessedDream
+    const processedDreamData = await ProcessedDream.find(
+      { dream_id: { $in: dreamIds } },
+      "sentiment"
+    );
+
+    const sentiments = processedDreamData.map((dream) => dream.sentiment);
+
+    return res
+      .status(200)
+      .json({ moodList, sentiments, currentStreak, hasLoggedToday });
+  } catch (er) {
+    console.error(er.message);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: er.message });
+  }
+};
+
+const getDashboardInsights = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Step 1: Fetch raw and processed dreams
+    const rawDreams = await RawDream.find({ user_id: userId });
+    const processedDreams = await ProcessedDream.find({
+      dream_id: { $in: rawDreams.map((d) => d._id) },
+    });
+
+    if (!rawDreams.length) {
+      return res.json({
+        totalDreams: 0,
+        averageMood: "Neutral",
+        topSymbol: null,
+        commonTheme: null,
+        sentimentBreakdown: { positive: 0, neutral: 0, negative: 0 },
+        moodHistory: [],
+        calendarData: [],
+      });
+    }
+
+    // Step 2: Total dreams
+    const totalDreams = rawDreams.length;
+
+    // Step 3: Average Mood
+    const moodValues = rawDreams
+      .map((d) => moodToIndex[d.mood])
+      .filter((v) => v !== undefined);
+    const averageMoodIndex = Math.round(
+      moodValues.reduce((a, b) => a + b, 0) / moodValues.length
+    );
+    const averageMood = indexToMood[averageMoodIndex];
+
+    // Step 4: Top Symbol
+    const symbolCount = {};
+    rawDreams.forEach((d) => {
+      d.symbols?.forEach((s) => {
+        symbolCount[s] = (symbolCount[s] || 0) + 1;
+      });
+    });
+    const topSymbol =
+      Object.entries(symbolCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+
+    // Step 5: Common Theme
+    const themeCount = {};
+    rawDreams.forEach((d) => {
+      d.themes?.forEach((t) => {
+        themeCount[t] = (themeCount[t] || 0) + 1;
+      });
+    });
+    const commonTheme =
+      Object.entries(themeCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+
+    // Step 6: Sentiment Breakdown
+    const totalSentiment = { positive: 0, neutral: 0, negative: 0 };
+    processedDreams.forEach((d) => {
+      totalSentiment.positive += d.sentiment?.positive || 0;
+      totalSentiment.neutral += d.sentiment?.neutral || 0;
+      totalSentiment.negative += d.sentiment?.negative || 0;
+    });
+    const total = Object.values(totalSentiment).reduce((a, b) => a + b, 0);
+    const sentimentBreakdown = {
+      positive: Math.round((totalSentiment.positive / total) * 100),
+      neutral: Math.round((totalSentiment.neutral / total) * 100),
+      negative: Math.round((totalSentiment.negative / total) * 100),
+    };
+
+    // Step 7: Mood History
+    const moodHistory = rawDreams.map((d) => ({
+      date: d.date.toISOString().split("T")[0],
+      mood: d.mood,
+      intensity: d.intensity,
+    }));
+
+    // Step 8: Calendar Data
+    const moodCalendar = {};
+    rawDreams.forEach((d) => {
+      const key = d.date.toISOString().split("T")[0];
+      if (!moodCalendar[key]) {
+        moodCalendar[key] = {
+          date: key,
+          count: 1,
+          mood: moodToEmoji[d.mood] || "❓",
+        };
+      } else {
+        moodCalendar[key].count++;
+      }
+    });
+    const calendarData = Object.values(moodCalendar);
+
+    // Step 9: Dreams in the current month
+    const now = new Date();
+    const currentMonth = now.getMonth(); // 0 = Jan
+    const currentYear = now.getFullYear();
+
+    const dreamsThisMonth = rawDreams.filter((d) => {
+      const date = new Date(d.date);
+      return (
+        date.getMonth() === currentMonth && date.getFullYear() === currentYear
+      );
+    });
+
+    const totalDreamsThisMonth = dreamsThisMonth.length;
+
+    // Final response
+    return res.json({
+      totalDreams,
+      averageMood,
+      totalDreamsThisMonth,
+      topSymbol,
+      commonTheme,
+      sentimentBreakdown,
+      moodHistory,
+      calendarData,
+    });
+  } catch (err) {
+    console.error("Dashboard insights error:", err);
+    return res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
+  }
+};
+
+const dashboardExplore = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // Step 1: Fetch recent raw dreams
+    const recentRawDreams = await RawDream.find({ user_id: userId })
+      .sort({ date: -1 })
+      .limit(5)
+      .select("_id title date mood analysis_status");
+
+    const recentDreamIds = recentRawDreams.map((d) => d._id);
+
+    // Step 2: Fetch corresponding processed dreams
+    const processedRecentDreams = await ProcessedDream.find({
+      dream_id: { $in: recentDreamIds },
+    }).select("dream_id dream_personality_type");
+
+    // Create a lookup map for fast access
+    const dptMap = {};
+    processedRecentDreams.forEach((pd) => {
+      dptMap[pd.dream_id] = pd.dream_personality_type;
+    });
+
+    // Step 3: Merge into final recentDreams output
+    const recentDreams = recentRawDreams.map((rd) => ({
+      _id: rd._id,
+      title: rd.title,
+      date: rd.date,
+      mood: rd.mood,
+      analysis_status: rd.analysis_status,
+      dream_personality_type: dptMap[rd._id] || null,
+    }));
+
+    // Fetch all dreams for stats
+    const allRawDreams = await RawDream.find({ user_id: userId }).select("_id");
+    const allDreamIds = allRawDreams.map((d) => d._id);
+
+    const allProcessedDreams = await ProcessedDream.find({
+      dream_id: { $in: allDreamIds },
+    }).select(" dream_personality_type");
+
+    // Symbol Frequency
+    const allRawDreamsWithSymbols = await RawDream.find({
+      user_id: userId,
+      symbols: { $exists: true, $ne: [] },
+    }).select("symbols");
+
+    const symbolFreq = {};
+    allRawDreamsWithSymbols.forEach((dream) => {
+      (dream.symbols || []).forEach((symbol) => {
+        symbolFreq[symbol] = (symbolFreq[symbol] || 0) + 1;
+      });
+    });
+
+    const emojiRegex = /^[\p{Emoji}]/u;
+
+    const commonSymbols = Object.entries(symbolFreq)
+      .map(([label, count]) => ({
+        label,
+        count,
+        emoji: emojiRegex.test(label.trim())
+          ? label.trim().split(" ")[0]
+          : null,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    // DPT Frequency
+    const dptFreq = {};
+    allProcessedDreams.forEach((dream) => {
+      const dpt = dream.dream_personality_type?.type;
+      if (dpt) dptFreq[dpt] = (dptFreq[dpt] || 0) + 1;
+    });
+
+    const [mostDPT = "", count = 0] =
+      Object.entries(dptFreq).sort((a, b) => b[1] - a[1])[0] || [];
+
+    const aiSuggestions = []; // Placeholder for future insights
+
+    return res.json({
+      recentDreams,
+      commonSymbols,
+      mostFrequentDPT: {
+        id: mostDPT,
+        count,
+      },
+      aiSuggestions,
+    });
+  } catch (er) {
+    console.error("dashboardExplore error", er.message);
+    return res.status(500).json({
+      message: "Internal server error",
+      error: er.message,
+    });
+  }
+};
+
 module.exports = {
   addRawDream,
   retryAnalysis,
   getAllDreams,
   toggleLike,
   retryImageGeneration,
+  dreamScope,
+  getDashboardInsights,
+  dashboardExplore,
 };

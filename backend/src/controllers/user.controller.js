@@ -51,7 +51,6 @@ const registerUser = async (req, res) => {
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      // maxAge: 40 * 1000,
       sameSite: "None",
       secure: true,
     });
@@ -116,7 +115,6 @@ const loginUser = async (req, res) => {
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
-      // maxAge: 40 * 1000,
       sameSite: "None",
       secure: true,
     });
