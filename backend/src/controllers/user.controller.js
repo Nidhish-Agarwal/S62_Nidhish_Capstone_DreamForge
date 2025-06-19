@@ -1,6 +1,63 @@
 const User = require("../models/user.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { getCurrentStreak } = require("./dream.controller.js");
+const RawDream = require("../models/rawDream.model.js");
+
+// Password validation function
+const validatePassword = (password) => {
+  // Length validation
+  if (password.length < 8) {
+    return {
+      isValid: false,
+      message: "Password must be at least 8 characters",
+    };
+  }
+
+  if (password.length > 16) {
+    return {
+      isValid: false,
+      message: "Password can be at most 16 characters",
+    };
+  }
+
+  // Uppercase letter validation
+  if (!/[A-Z]/.test(password)) {
+    return {
+      isValid: false,
+      message: "Must include at least one uppercase letter",
+    };
+  }
+
+  // Lowercase letter validation
+  if (!/[a-z]/.test(password)) {
+    return {
+      isValid: false,
+      message: "Must include at least one lowercase letter",
+    };
+  }
+
+  // Number validation
+  if (!/\d/.test(password)) {
+    return {
+      isValid: false,
+      message: "Must include at least one number",
+    };
+  }
+
+  // Special character validation
+  if (!/[^A-Za-z0-9]/.test(password)) {
+    return {
+      isValid: false,
+      message: "Must include at least one special character",
+    };
+  }
+
+  return {
+    isValid: true,
+    message: "Password is valid",
+  };
+};
 
 const registerUser = async (req, res) => {
   try {
@@ -194,7 +251,14 @@ const fetchUserData = async (req, res) => {
 
     if (!foundUser) return res.status(404).json({ message: "User not found" });
 
-    return res.status(200).json({ user: foundUser });
+    const rawDreamData = await RawDream.find({ user_id: userId }, "date");
+
+    // Extract Dream dates to calculate streak
+    const dreamDates = rawDreamData.map((dream) => dream.date);
+
+    const { streak } = getCurrentStreak(dreamDates);
+
+    return res.status(200).json({ user: foundUser, currentStreak: streak });
   } catch (error) {
     console.error("Error fetching user:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -235,6 +299,109 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.userId;
+
+    // Input validation
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    // Comprehensive password validation
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: passwordValidation.message,
+      });
+    }
+
+    // Check if new password is the same as current password
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "New password must be different from current password",
+      });
+    }
+
+    // Find user in database
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Check if user has a password (for social login users)
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password change not available for social login accounts. Please contact support.",
+      });
+    }
+
+    // Verify current password
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    // Hash new password
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in database
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        password: hashedNewPassword,
+      },
+      { new: true }
+    );
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Password change error:", error);
+
+    // Handle specific database errors
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid data provided",
+      });
+    }
+
+    if (error.name === "MongoError" || error.name === "MongoServerError") {
+      return res.status(500).json({
+        success: false,
+        message: "Database error occurred. Please try again later.",
+      });
+    }
+
+    // Generic server error
+    res.status(500).json({
+      success: false,
+      message: "An unexpected error occurred. Please try again later.",
+    });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -242,4 +409,5 @@ module.exports = {
   handleLogout,
   fetchUserData,
   updateUserProfile,
+  changePassword,
 };

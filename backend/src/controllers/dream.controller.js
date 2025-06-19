@@ -130,9 +130,10 @@ const addRawDream = async (req, res) => {
 
     if (currentStreak > user.maxDreamStreak) {
       user.maxDreamStreak = currentStreak;
-      await user.save();
     }
+    user.dreamCount = user.dreamCount + 1;
 
+    await user.save();
     // Adding To queue for AI processing
     await addAnalysisJob(savedDream._id, userId);
 
@@ -632,4 +633,5 @@ module.exports = {
   dreamScope,
   getDashboardInsights,
   dashboardExplore,
+  getCurrentStreak,
 };
