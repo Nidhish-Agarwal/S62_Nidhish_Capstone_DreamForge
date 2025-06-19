@@ -1,167 +1,142 @@
-import React, { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import EditProfileOverlay from "../components/overlays/EditProfileOverlay";
+
+import { toast } from "sonner";
+
+import { motion } from "framer-motion";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
-import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
+import ProfileHeaderCard from "../components/Profile/ProfileHeaderCard";
+import UserStatsGrid from "../components/Profile/UserStatsGrid";
+import AccountSettings from "../components/Profile/AccountSettings";
+import useLogout from "../hooks/useLogout";
+import { useNavigate } from "react-router-dom";
 
+// Main Profile Page Component
 const ProfilePage = () => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [user, setUser] = useState({});
-  const [recentDreams, setRecentDreams] = useState([]);
-  const [dreamInterests, setDreamInterests] = useState([]);
-  const axiosPrivate = useAxiosPrivate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
+
+  const logout = useLogout();
   const navigate = useNavigate();
-  const location = useLocation();
+  const axiosPrivate = useAxiosPrivate();
 
+  // Fetch user data
   useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-
-    const getUsers = async () => {
-      try {
-        const response = await axiosPrivate.get("/user/get_user_data", {
-          signal: controller.signal,
-        });
-        // console.log(response.data);
-        isMounted && setUser(response.data.user);
-      } catch (err) {
-        // console.error(err);
-        if (axios.isCancel(err)) {
-          console.log("Request was canceled:", err.message);
-        } else if (err.response?.status === 403) {
-          console.log("You do not have permission to view this content.");
-        } else {
-          console.error("API Error:", err.message);
-          navigate("/login", { state: { from: location }, replace: true });
-        }
-      }
-    };
-
-    getUsers();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
+    fetchUserData();
   }, []);
 
-  useEffect(() => {
-    if (isEditing) {
-      document.documentElement.classList.add("overlay-open");
-    } else {
-      document.documentElement.classList.remove("overlay-open");
-    }
-  }, [isEditing]);
+  const fetchUserData = async () => {
+    try {
+      const response = await axiosPrivate.get("/user/get_user_data");
 
-  const handleSave = (updatedUser) => {
-    setUser(updatedUser); // Update user state
+      setUser(response.data.user);
+      setCurrentStreak(response.data.currentStreak);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      toast.error("Failed to load profile data");
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const handleUpdateProfile = async (formData) => {
+    setIsUpdating(true);
+    try {
+      const response = await axiosPrivate.put("/user/update", formData, {
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setUser(response.data.user);
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Failed to update profile");
+      throw error;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleChangePassword = async (passwordData) => {
+    setIsUpdating(true);
+    try {
+      const repsonse = await axiosPrivate.put(
+        "/user/change-password",
+        passwordData
+      );
+
+      toast.success("Password changed successfully!");
+    } catch (error) {
+      console.error("Error changing password:", error);
+      toast.error(error.response.data.message || "Failed to change password");
+      throw error;
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setIsUpdating(true);
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast.error("Failed to logout");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-gray-600">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Failed to load profile data</p>
+          <Button onClick={fetchUserData}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="max-w-3xl w-full mx-auto bg-gradient-to-br from-[#3a0b32] to-[#120515] p-8 rounded-3xl shadow-lg border border-gray-700 text-white">
-        {/* Profile Header */}
-        <div className="flex items-center gap-6">
-          <Avatar className="w-20 h-20">
-            <AvatarImage src={user.profileImage} alt="Profile Picture" />
-            <AvatarFallback className="text-gray-600 dark:text-white font-bold text-2xl">
-              {user?.username
-                ? user.username
-                    .split(" ")
-                    .map((word) => word[0])
-                    .join("")
-                    .toUpperCase()
-                : "?"}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            {/* <h2 className="text-3xl font-bold">{user.name}</h2> */}
-            <p className="text-gray-400">{user.username}</p>
-            <p className="mt-2 text-gray-300">{user.bio}</p>
-          </div>
-        </div>
+    <div className="min-h-screen py-8">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="space-y-8">
+          <ProfileHeaderCard
+            user={user}
+            onUpdateProfile={handleUpdateProfile}
+            isUpdating={isUpdating}
+          />
 
-        {/* Dream Statistics */}
-        <div className="mt-6 grid grid-cols-3 gap-4">
-          <Card className="p-4 bg-gray-800 text-center rounded-xl">
-            <p className="text-2xl font-bold">{user.dreamCount}</p>
-            <p className="text-gray-400 text-sm">Total Dreams</p>
-          </Card>
-          <Card className="p-4 bg-gray-800 text-center rounded-xl">
-            <p className="text-2xl font-bold">
-              {/* {user.dreamStats.uniqueEmotions} */} 0
-            </p>
-            <p className="text-gray-400 text-sm">Unique Emotions</p>
-          </Card>
-          <Card className="p-4 bg-gray-800 text-center rounded-xl">
-            <p className="text-2xl font-bold">{user.streakCount} Days</p>
-            <p className="text-gray-400 text-sm">Longest Streak</p>
-          </Card>
-        </div>
+          <UserStatsGrid user={user} currentStreak={currentStreak} />
 
-        {/* Edit Profile Button */}
-        <div className="mt-6 text-center">
-          <Button
-            onClick={() => setIsEditing(true)}
-            className="bg-gray-600 text-white px-6 py-2 rounded-xl hover:bg-gray-500"
-          >
-            Edit Profile
-          </Button>
+          <AccountSettings
+            user={user}
+            onLogout={handleLogout}
+            onChangePassword={handleChangePassword}
+            isUpdating={isUpdating}
+          />
         </div>
       </div>
-
-      <div className="max-w-3xl w-full mx-auto bg-gradient-to-br from-[#3a0b32] to-[#120515] p-8 rounded-3xl shadow-lg border border-gray-700 text-white">
-        {/* Recent Dreams */}
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-2">Recent Dreams</h3>
-          <ul className="space-y-2">
-            {recentDreams.length > 0 ? (
-              recentDreams.map((dream, index) => (
-                <li
-                  key={index}
-                  className="p-3 bg-gray-900 rounded-lg text-gray-300"
-                >
-                  <p className="text-white">{dream.title}</p>
-                  <p className="text-gray-500 text-sm">{dream.date}</p>
-                </li>
-              ))
-            ) : (
-              <div>Add some dreams to see them here</div>
-            )}
-          </ul>
-        </div>
-      </div>
-
-      <div className="max-w-3xl mb-4 w-full mx-auto bg-gradient-to-br from-[#3a0b32] to-[#120515] p-8 rounded-3xl shadow-lg border border-gray-700 text-white">
-        {/* Interests */}
-        <div className="mt-6">
-          <h3 className="text-xl font-semibold mb-2">Dream Interests</h3>
-          <div className="flex flex-wrap gap-2">
-            {dreamInterests.length > 0 ? (
-              dreamInterests.map((interest, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-gray-700 text-sm rounded-lg"
-                >
-                  {interest}
-                </span>
-              ))
-            ) : (
-              <div>Not enough data</div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <EditProfileOverlay
-        user={user}
-        isOpen={isEditing}
-        onClose={() => setIsEditing(false)}
-        onSave={handleSave}
-      />
     </div>
   );
 };
