@@ -4,20 +4,35 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Heart, Bug, Lightbulb } from "lucide-react";
+import { Heart, Bug, Lightbulb, Loader } from "lucide-react";
+import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 export default function FeedbackSection() {
   const [feedbackType, setFeedbackType] = useState("bug");
   const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const axiosPrivate = useAxiosPrivate();
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!message.trim()) {
       toast.error("Please enter some feedback.");
       return;
     }
+    try {
+      setSending(true);
+      const response = await axiosPrivate.post("/user/feedback", {
+        feedbackType,
+        message,
+      });
 
-    toast.success("✨ Thank you for your feedback!");
-    setMessage("");
+      toast.success("✨ Thank you for your feedback!");
+      setMessage("");
+    } catch (er) {
+      console.error("Error submitting the feedback");
+      toast.error(`Failed to submit the feedback: ${er.message}`);
+    } finally {
+      setSending(false);
+    }
   };
 
   const feedbackEmojis = {
@@ -95,9 +110,19 @@ export default function FeedbackSection() {
 
           <Button
             onClick={handleSubmit}
-            className="bg-[#29254a] text-white hover:scale-105 transition-transform"
+            className={`bg-[#29254a] text-white hover:scale-105 transition-transform flex items-center justify-center gap-2 ${
+              sending ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={sending}
           >
-            Submit Feedback
+            {sending ? (
+              <>
+                <Loader className="w-4 h-4 animate-spin" />
+                Sending...
+              </>
+            ) : (
+              "Submit Feedback"
+            )}
           </Button>
         </TabsContent>
       </Tabs>

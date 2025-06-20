@@ -8,14 +8,6 @@ function Dashboard() {
     <div className="p-4">
       <DashboardHeader />
       <DashboardTabs />
-      {/* <div className="flex flex-wrap">
-        <div className="lg:w-1/2 w-full">
-          <DashboardLeftColumn />
-        </div>
-        <div className="lg:w-1/2 w-full">
-          <DashboardRightColumn />
-        </div>
-      </div> */}
     </div>
   );
 }

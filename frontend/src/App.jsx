@@ -17,77 +17,90 @@ import AllPostsPage from "./Pages/AllPostsPage";
 import MyPostsPage from "./Pages/MyPostsPage";
 import BookmarksPage from "./Pages/BookmarksPage";
 import HelpPage from "./Pages/HelpPage";
+import { SentryErrorBoundary } from "./Pages/ErrorBoundary";
 
 function App() {
   return (
     <>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/signup" element={<SignupForm />} />
-        {/* <Route path="/signup" element={<MyForm />} /> */}
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/unauthorized" element={<Unauthorized />} />
-
-        <Route element={<PersistLogin />}>
-          <Route element={<RequireAuth allowedRoles={[2001]} />}>
-            <Route
-              path="/dashboard"
-              element={
-                <MainLayout>
-                  <Toaster position="bottom-right" richColors />
-                  <Dashboard />
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <MainLayout>
-                  <Toaster position="bottom-right" richColors />
-                  <ProfilePage />
-                </MainLayout>
-              }
-            />
-            <Route
-              path="/mydreams"
-              element={
-                <MainLayout>
-                  <Toaster position="bottom-right" richColors />
-                  <MyDreamsPage />
-                </MainLayout>
-              }
-            />
-
-            <Route
-              path="/community"
-              element={
-                <MainLayout>
-                  <Toaster position="bottom-right" richColors />
-                  <CommunityPage />
-                </MainLayout>
-              }
-            >
-              <Route index element={<Navigate to="all-posts" replace />} />
-              <Route path="all-posts" element={<AllPostsPage />} />
-              <Route path="my-posts" element={<MyPostsPage />} />
-              <Route path="bookmarks" element={<BookmarksPage />} />
-            </Route>
-          </Route>
-
+      <SentryErrorBoundary>
+        <Routes>
           <Route
-            path="/help"
+            path="/"
             element={
-              <MainLayout>
-                <HelpPage />
-                {/* here it i1Q2`1 `   */}
-              </MainLayout>
+              <>
+                <Toaster position="bottom-right" richColors />
+                <LandingPage />
+              </>
             }
           />
-        </Route>
 
-        {/* 404 Page */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="/signup" element={<SignupForm />} />
+          {/* <Route path="/signup" element={<MyForm />} /> */}
+          <Route path="/login" element={<LoginForm />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+
+          <Route element={<PersistLogin />}>
+            <Route element={<RequireAuth allowedRoles={[2001]} />}>
+              <Route
+                path="/dashboard"
+                element={
+                  <MainLayout>
+                    <Toaster position="bottom-right" richColors />
+                    <Dashboard />
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <MainLayout>
+                    <Toaster position="bottom-right" richColors />
+                    <ProfilePage />
+                  </MainLayout>
+                }
+              />
+              <Route
+                path="/mydreams"
+                element={
+                  <MainLayout>
+                    <Toaster position="bottom-right" richColors />
+                    <MyDreamsPage />
+                  </MainLayout>
+                }
+              />
+
+              <Route
+                path="/community"
+                element={
+                  <MainLayout>
+                    <Toaster position="bottom-right" richColors />
+                    <CommunityPage />
+                  </MainLayout>
+                }
+              >
+                <Route index element={<Navigate to="all-posts" replace />} />
+                <Route path="all-posts" element={<AllPostsPage />} />
+                <Route path="my-posts" element={<MyPostsPage />} />
+                <Route path="bookmarks" element={<BookmarksPage />} />
+              </Route>
+            </Route>
+
+            <Route
+              path="/help"
+              element={
+                <MainLayout>
+                  <Toaster position="bottom-right" richColors />
+                  <HelpPage />
+                  {/* here it i1Q2`1 `   */}
+                </MainLayout>
+              }
+            />
+          </Route>
+
+          {/* 404 Page */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </SentryErrorBoundary>
     </>
   );
 }

@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import api from "../api/axios";
 import useAuth from "../hooks/useAuth";
-// import axios from "../api/axios.js";
 
 // Validation Schema
 const signupSchema = z
@@ -68,14 +67,14 @@ export default function SignupForm() {
         console.log(response);
         setErrorMessage("");
         const accessToken = response.data?.accessToken;
-        const roles = response.data?.user?.roles;
-        const userId = response.data?.user?._id;
+        const roles = response.data?.roles;
+        const userId = response.data?._id;
         setAuth({
           userId,
           accessToken,
           roles,
         });
-        navigate("/dashboard"); // Redirect to login page
+        navigate("/dashboard"); // Redirect to dashboard
       }
     } catch (err) {
       if (!err?.response) {
