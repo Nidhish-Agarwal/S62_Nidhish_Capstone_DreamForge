@@ -7,7 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Moon,
+  Stars,
+  Sparkles,
+  CloudMoon,
+  Zap,
+  Heart,
+  UserPlus,
+  Shield,
+  Key,
+} from "lucide-react";
 import api from "../api/axios";
 import useAuth from "../hooks/useAuth";
 
@@ -46,7 +59,15 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const togglePersist = () => {
     setPersist((prev) => !prev);
@@ -63,7 +84,6 @@ export default function SignupForm() {
         withCredentials: true,
       });
       if (response.status === 201) {
-        // User created successfully
         console.log(response);
         setErrorMessage("");
         const accessToken = response.data?.accessToken;
@@ -74,7 +94,7 @@ export default function SignupForm() {
           accessToken,
           roles,
         });
-        navigate("/dashboard"); // Redirect to dashboard
+        navigate("/dashboard");
       }
     } catch (err) {
       if (!err?.response) {
@@ -89,155 +109,381 @@ export default function SignupForm() {
     }
   };
 
+  const timeOfDay = () => {
+    const hour = currentTime.getHours();
+    if (hour >= 5 && hour < 12) return "Morning";
+    if (hour >= 12 && hour < 17) return "Afternoon";
+    if (hour >= 17 && hour < 21) return "Evening";
+    return "Night";
+  };
+
+  const getGreeting = () => {
+    const time = timeOfDay();
+    const greetings = {
+      Morning: "Begin your morning ritual",
+      Afternoon: "Craft your afternoon destiny",
+      Evening: "Shape your evening dreams",
+      Night: "Weave your midnight magic",
+    };
+    return greetings[time];
+  };
+
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-900">
-      <Card className="w-full max-w-md p-6 shadow-lg border border-gray-700 bg-gray-800 text-white">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            Create an Account
-          </CardTitle>
-          <p className="text-gray-400 text-sm mt-1">
-            Join us and start your journey!
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            {/* Name Field */}
-            <div>
-              <Label className="text-gray-300">Name</Label>
-              <Input
-                {...register("username")}
-                type="text"
-                placeholder="John Doe"
-                className="mt-1 bg-gray-700 text-white border border-gray-600 focus:ring-indigo-500"
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0">
+        {/* Floating orbs */}
+        {[...Array(15)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-gradient-to-br from-purple-400/30 to-pink-400/30 animate-pulse"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${20 + Math.random() * 40}px`,
+              height: `${20 + Math.random() * 40}px`,
+              animationDelay: `${Math.random() * 3}s`,
+              animationDuration: `${3 + Math.random() * 2}s`,
+            }}
+          />
+        ))}
+
+        {/* Constellation pattern */}
+        <div className="absolute top-20 left-20 opacity-30">
+          <div className="relative">
+            {[...Array(8)].map((_, i) => (
+              <Stars
+                key={i}
+                className="absolute w-3 h-3 text-cyan-300 animate-twinkle"
+                style={{
+                  left: `${Math.cos((i * Math.PI) / 4) * 50}px`,
+                  top: `${Math.sin((i * Math.PI) / 4) * 50}px`,
+                  animationDelay: `${i * 0.2}s`,
+                }}
               />
-              {errors.username && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.username.message}
-                </p>
-              )}
-            </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-            {/* Email Field */}
-            <div>
-              <Label className="text-gray-300">Email</Label>
-              <Input
-                {...register("email")}
-                type="email"
-                placeholder="you@example.com"
-                className="mt-1 bg-gray-700 text-white border border-gray-600 focus:ring-indigo-500"
-              />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
+      {/* Main Content */}
+      <div className="relative z-10 flex min-h-screen">
+        {/* Left Side - Signup Form */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-full max-w-md">
+            <Card className="backdrop-blur-xl bg-white/5 border border-white/20 shadow-2xl rounded-3xl overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-cyan-500/5" />
 
-            {/* Password Field */}
-            <div>
-              <Label className="text-gray-300">Password</Label>
-              <div className="relative">
-                <Input
-                  {...register("password")}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="mt-1 bg-gray-700 text-white border border-gray-600 focus:ring-indigo-500 pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-400"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-
-            {/* Confirm Password Field */}
-            <div>
-              <Label className="text-gray-300">Confirm Password</Label>
-              <div className="relative">
-                <Input
-                  {...register("confirmPassword")}
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="mt-1 bg-gray-700 text-white border border-gray-600 focus:ring-indigo-500 pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-3 flex items-center text-gray-400"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
-                </button>
-              </div>
-              {errors.confirmPassword && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="persist"
-                checked={persist}
-                onChange={togglePersist}
-                className="w-4 h-4 text-indigo-600 bg-gray-700 border-gray-600 focus:ring-indigo-500"
-              />
-              <Label htmlFor="persist" className="ml-2 text-gray-300">
-                Remember me
-              </Label>
-            </div>
-
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              className="w-full mt-2 bg-indigo-500 hover:bg-indigo-600"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Signing Up...
+              <CardHeader className="relative z-10 text-center p-8">
+                <div className="flex justify-center mb-4">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-3 shadow-lg">
+                    <UserPlus className="w-8 h-8 text-white" />
+                  </div>
                 </div>
-              ) : (
-                "Sign Up"
-              )}
-            </Button>
-          </form>
+                <CardTitle className="text-3xl font-bold text-white mb-2">
+                  Join the Dream Realm
+                </CardTitle>
+                <p className="text-purple-200 opacity-90">
+                  Begin your mystical journey today
+                </p>
+              </CardHeader>
 
-          {errorMessage && (
-            <p className="text-red-500 text-sm text-center mt-2">
-              {errorMessage}
-            </p>
-          )}
+              <CardContent className="relative z-10 p-8 pt-0">
+                <div className="space-y-6">
+                  {/* Name Field */}
+                  <div className="space-y-2">
+                    <Label className="text-purple-200 font-medium flex items-center">
+                      <Stars className="w-4 h-4 mr-2 text-purple-400" />
+                      Mystical Name
+                    </Label>
+                    <div className="relative group">
+                      <Input
+                        {...register("username")}
+                        type="text"
+                        placeholder="Enter your dream name..."
+                        className="bg-white/10 backdrop-blur-sm text-white border border-white/30 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 rounded-xl h-12 text-lg transition-all duration-300 placeholder:text-purple-300/60 group-hover:bg-white/15"
+                      />
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-focus-within:from-purple-500/10 group-focus-within:to-pink-500/10 transition-all duration-500 pointer-events-none" />
+                    </div>
+                    {errors.username && (
+                      <p className="text-pink-400 text-sm animate-pulse flex items-center">
+                        <Stars className="w-3 h-3 mr-1" />
+                        {errors.username.message}
+                      </p>
+                    )}
+                  </div>
 
-          {/* Already have an account? */}
-          <p className="text-center text-sm text-gray-400 mt-3">
-            Already have an account?{" "}
-            <a href="/login" className="text-indigo-400 hover:text-indigo-500">
-              Log in
-            </a>
-          </p>
-        </CardContent>
-      </Card>
+                  {/* Email Field */}
+                  <div className="space-y-2">
+                    <Label className="text-purple-200 font-medium flex items-center">
+                      <Sparkles className="w-4 h-4 mr-2 text-purple-400" />
+                      Ethereal Email
+                    </Label>
+                    <div className="relative group">
+                      <Input
+                        {...register("email")}
+                        type="email"
+                        placeholder="Enter your cosmic address..."
+                        className="bg-white/10 backdrop-blur-sm text-white border border-white/30 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 rounded-xl h-12 text-lg transition-all duration-300 placeholder:text-purple-300/60 group-hover:bg-white/15"
+                      />
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-focus-within:from-purple-500/10 group-focus-within:to-pink-500/10 transition-all duration-500 pointer-events-none" />
+                    </div>
+                    {errors.email && (
+                      <p className="text-pink-400 text-sm animate-pulse flex items-center">
+                        <Stars className="w-3 h-3 mr-1" />
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password Field */}
+                  <div className="space-y-2">
+                    <Label className="text-purple-200 font-medium flex items-center">
+                      <Shield className="w-4 h-4 mr-2 text-purple-400" />
+                      Sacred Password
+                    </Label>
+                    <div className="relative group">
+                      <Input
+                        {...register("password")}
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Create your secret key..."
+                        className="bg-white/10 backdrop-blur-sm text-white border border-white/30 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 rounded-xl h-12 text-lg pr-12 transition-all duration-300 placeholder:text-purple-300/60 group-hover:bg-white/15"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-3 flex items-center text-purple-300 hover:text-white transition-colors duration-200"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-focus-within:from-purple-500/10 group-focus-within:to-pink-500/10 transition-all duration-500 pointer-events-none" />
+                    </div>
+                    {errors.password && (
+                      <p className="text-pink-400 text-sm animate-pulse flex items-center">
+                        <Stars className="w-3 h-3 mr-1" />
+                        {errors.password.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Confirm Password Field */}
+                  <div className="space-y-2">
+                    <Label className="text-purple-200 font-medium flex items-center">
+                      <Key className="w-4 h-4 mr-2 text-purple-400" />
+                      Confirm Password
+                    </Label>
+                    <div className="relative group">
+                      <Input
+                        {...register("confirmPassword")}
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your secret key..."
+                        className="bg-white/10 backdrop-blur-sm text-white border border-white/30 focus:border-purple-400 focus:ring-2 focus:ring-purple-400/50 rounded-xl h-12 text-lg pr-12 transition-all duration-300 placeholder:text-purple-300/60 group-hover:bg-white/15"
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-3 flex items-center text-purple-300 hover:text-white transition-colors duration-200"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                      <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-focus-within:from-purple-500/10 group-focus-within:to-pink-500/10 transition-all duration-500 pointer-events-none" />
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="text-pink-400 text-sm animate-pulse flex items-center">
+                        <Stars className="w-3 h-3 mr-1" />
+                        {errors.confirmPassword.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Remember Me */}
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        id="persist"
+                        checked={persist}
+                        onChange={togglePersist}
+                        className="w-5 h-5 rounded bg-white/10 border border-white/30 text-purple-500 focus:ring-2 focus:ring-purple-400/50"
+                      />
+                      {persist && (
+                        <Sparkles className="absolute inset-0 w-5 h-5 text-purple-400 pointer-events-none animate-pulse" />
+                      )}
+                    </div>
+                    <Label
+                      htmlFor="persist"
+                      className="text-purple-200 text-sm cursor-pointer"
+                    >
+                      Remember me
+                    </Label>
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
+                    onClick={handleSubmit(onSubmit)}
+                    className="w-full h-14 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 hover:from-purple-500 hover:via-pink-500 hover:to-cyan-500 text-white font-semibold text-lg rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl shadow-lg disabled:opacity-70 disabled:hover:scale-100"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <div className="flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin mr-3" />
+                        <span className="animate-pulse">
+                          Creating portal...
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center">
+                        <UserPlus className="w-6 h-6 mr-3" />
+                        Create Dream Realm
+                      </div>
+                    )}
+                  </Button>
+                </div>
+
+                {errorMessage && (
+                  <div className="mt-6 p-4 rounded-2xl bg-red-500/20 border border-red-400/30 backdrop-blur-sm">
+                    <p className="text-red-300 text-center animate-pulse flex items-center justify-center">
+                      <Moon className="w-4 h-4 mr-2" />
+                      {errorMessage}
+                    </p>
+                  </div>
+                )}
+
+                {/* Login Link */}
+                <div className="text-center mt-8 pt-6 border-t border-white/20">
+                  <p className="text-purple-200 text-sm">
+                    Already part of the realm?{" "}
+                    <a
+                      href="/login"
+                      className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors duration-200 hover:underline"
+                    >
+                      Go to Login
+                    </a>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Right Side - Welcome Section */}
+        <div className="flex-1 flex flex-col justify-center items-center p-8 text-center">
+          <div className="max-w-md space-y-6">
+            {/* Animated Logo */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-xl opacity-50 animate-pulse" />
+              <div className="relative bg-gradient-to-br from-purple-600 to-pink-600 rounded-full p-6 shadow-2xl">
+                <CloudMoon className="w-16 h-16 text-white animate-float" />
+              </div>
+            </div>
+
+            {/* Welcome Text */}
+            <div className="space-y-4">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-200 via-pink-200 to-cyan-200 bg-clip-text text-transparent">
+                DreamForge
+              </h1>
+              <p className="text-xl text-purple-200 opacity-90">
+                {getGreeting()}
+              </p>
+              <p className="text-purple-300 opacity-80 leading-relaxed">
+                Embark on a mystical journey where your consciousness becomes
+                the canvas, and your dreams paint infinite possibilities.
+              </p>
+            </div>
+
+            {/* Time Display */}
+            <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 shadow-xl">
+              <div className="text-purple-200 text-sm opacity-80">
+                Mystical Time
+              </div>
+              <div className="text-2xl font-bold text-white">
+                {currentTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </div>
+              <div className="text-purple-300 text-sm">
+                Ideal moment for new beginnings
+              </div>
+            </div>
+
+            {/* Feature highlights */}
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center">
+                <Shield className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
+                <p className="text-purple-200 text-sm font-medium">
+                  Secure Portal
+                </p>
+                <p className="text-purple-300 text-xs opacity-80">
+                  Protected dreams
+                </p>
+              </div>
+              <div className="bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center">
+                <Zap className="w-8 h-8 text-pink-400 mx-auto mb-2" />
+                <p className="text-purple-200 text-sm font-medium">
+                  Instant Access
+                </p>
+                <p className="text-purple-300 text-xs opacity-80">
+                  Immediate magic
+                </p>
+              </div>
+            </div>
+
+            {/* Floating Elements */}
+            <div className="flex justify-center space-x-8 pt-8">
+              <div className="animate-bounce" style={{ animationDelay: "0s" }}>
+                <Sparkles className="w-6 h-6 text-cyan-400 opacity-60" />
+              </div>
+              <div
+                className="animate-bounce"
+                style={{ animationDelay: "0.5s" }}
+              >
+                <Stars className="w-6 h-6 text-purple-400 opacity-60" />
+              </div>
+              <div className="animate-bounce" style={{ animationDelay: "1s" }}>
+                <Heart className="w-6 h-6 text-pink-400 opacity-60" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+        @keyframes twinkle {
+          0%,
+          100% {
+            opacity: 0.3;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        .animate-twinkle {
+          animation: twinkle 2s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

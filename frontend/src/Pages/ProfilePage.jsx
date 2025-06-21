@@ -63,8 +63,8 @@ const ProfilePage = () => {
   const handleChangePassword = async (passwordData) => {
     setIsUpdating(true);
     try {
-      const repsonse = await axiosPrivate.put(
-        "/user/change-password",
+      const response = await axiosPrivate.put(
+        "/auth/change-password",
         passwordData
       );
 

@@ -18,6 +18,8 @@ import MyPostsPage from "./Pages/MyPostsPage";
 import BookmarksPage from "./Pages/BookmarksPage";
 import HelpPage from "./Pages/HelpPage";
 import { SentryErrorBoundary } from "./Pages/ErrorBoundary";
+import ForgotPasswordPage from "./Pages/ForgotPasswordPage";
+import ResetPasswordPage from "./Pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -38,6 +40,24 @@ function App() {
           {/* <Route path="/signup" element={<MyForm />} /> */}
           <Route path="/login" element={<LoginForm />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route
+            path="/forgot-password"
+            element={
+              <>
+                <Toaster position="bottom-right" richColors />
+                <ForgotPasswordPage />
+              </>
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              <>
+                <Toaster position="bottom-right" richColors />
+                <ResetPasswordPage />
+              </>
+            }
+          />
 
           <Route element={<PersistLogin />}>
             <Route element={<RequireAuth allowedRoles={[2001]} />}>

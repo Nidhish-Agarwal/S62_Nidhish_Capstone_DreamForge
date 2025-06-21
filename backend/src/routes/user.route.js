@@ -17,7 +17,6 @@ const {
   handleLogout,
   fetchUserData,
   updateUserProfile,
-  changePassword,
   sendFeedback,
 } = require("../controllers/user.controller.js");
 const {
@@ -30,7 +29,7 @@ router.get("/", verifyJWT, verifyRoles(ROLES_LIST.Admin), fetchAllUsers);
 router.get("/logout", handleLogout);
 router.get("/get_user_data", verifyJWT, fetchUserData);
 router.put("/update", verifyJWT, handleProfilePictureUpload, updateUserProfile);
-router.put("/change-password", verifyJWT, changePassword);
+
 router.post("/feedback", verifyJWT, sendFeedback);
 
 module.exports = router;
