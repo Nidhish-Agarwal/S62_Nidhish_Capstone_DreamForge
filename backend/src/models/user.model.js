@@ -64,6 +64,10 @@ const UserSchema = new mongoose.Schema(
         ref: "CommunityPost",
       },
     ], // For quick lookup of posts the user liked
+    resetPasswordIssuedAt: {
+      type: Date, // Timestamp for when the password reset was issued
+      default: null, // Used to track password reset requests
+    },
   },
   { timestamps: true }
 );

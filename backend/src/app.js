@@ -6,6 +6,7 @@ const userRouter = require("./routes/user.route.js");
 const tokenRouter = require("./routes/token.route.js");
 const dreamRouter = require("./routes/dream.route.js");
 const communityRouter = require("./routes/post.route.js");
+const authRouter = require("./routes/auth.route.js");
 const corsOptions = require("./config/corsOptions.js");
 const credentials = require("./middlewares/credentials.js");
 
@@ -23,5 +24,6 @@ app.use("/user", userRouter);
 app.use("/refresh", tokenRouter);
 app.use("/dream", dreamRouter);
 app.use("/community", communityRouter);
+app.use("/auth", authRouter);
 
 module.exports = app;
