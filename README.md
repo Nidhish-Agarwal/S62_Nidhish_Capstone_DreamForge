@@ -154,6 +154,6 @@ DreamForge is designed to bridge the gap between subjective dream experiences an
 
 ---
 
-### Backend Render Deployment Link:
+### Frontend Vercel Deployment Link:
 
-https://s62-nidhish-capstone-dreamforge.onrender.com
+https://s62-nidhish-capstone-dream-forge.vercel.app
