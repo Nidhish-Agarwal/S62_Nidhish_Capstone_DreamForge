@@ -322,7 +322,6 @@ const googleLogin = async (req, res) => {
     );
 
     const { email, name, picture } = googleRes.data;
-    console.log(email, name, picture);
 
     if (!email) {
       return res
