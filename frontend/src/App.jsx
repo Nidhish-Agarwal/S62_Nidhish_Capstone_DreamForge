@@ -36,9 +36,25 @@ function App() {
             }
           />
 
-          <Route path="/signup" element={<SignupForm />} />
+          <Route
+            path="/signup"
+            element={
+              <>
+                <Toaster position="bottom-right" richColors />
+                <SignupForm />
+              </>
+            }
+          />
           {/* <Route path="/signup" element={<MyForm />} /> */}
-          <Route path="/login" element={<LoginForm />} />
+          <Route
+            path="/login"
+            element={
+              <>
+                <Toaster position="bottom-right" richColors />
+                <LoginForm />
+              </>
+            }
+          />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route
             path="/forgot-password"

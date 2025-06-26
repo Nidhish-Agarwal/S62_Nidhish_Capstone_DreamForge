@@ -10,6 +10,7 @@ import { Info, Heart, Meh, Frown, Sparkles, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import EmptyStateUI from "./EmptyDoughnut";
 
 const sentimentData = {
   positive: {
@@ -46,13 +47,7 @@ export default function SentimentBreakdownCard({ loading, summary, hasError }) {
   const [animationComplete, setAnimationComplete] = useState(false);
 
   // Mock data for demonstration
-  const mockSummary = summary || {
-    sentimentBreakdown: {
-      positive: 45,
-      neutral: 35,
-      negative: 20,
-    },
-  };
+  const mockSummary = summary;
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimationComplete(true), 1000);
@@ -107,6 +102,15 @@ export default function SentimentBreakdownCard({ loading, summary, hasError }) {
         </Card>
       </div>
     );
+  }
+
+  if (
+    !summary?.sentimentBreakdown ||
+    (summary.sentimentBreakdown.positive === 0 &&
+      summary.sentimentBreakdown.neutral === 0 &&
+      summary.sentimentBreakdown.negative === 0)
+  ) {
+    return <EmptyStateUI />; // Use the empty state UI component if no data is available
   }
 
   const { positive, neutral, negative } = mockSummary.sentimentBreakdown;

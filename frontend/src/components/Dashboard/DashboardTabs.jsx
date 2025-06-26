@@ -20,7 +20,16 @@ export default function DashboardTabs() {
   // API #1: /dream/insights
   const [insightsLoading, setInsightsLoading] = useState(true);
   const [insightsError, setInsightsError] = useState(false);
-  const [insightsData, setInsightsData] = useState(null);
+  const [insightsData, setInsightsData] = useState({
+    totalDreams: 0,
+    averageMood: "Neutral",
+    totalDreamsThisMonth: 0,
+    topSymbol: "",
+    commonTheme: "",
+    sentimentBreakdown: [],
+    moodHistory: [],
+    calendarData: [],
+  });
 
   // API #2: /dream/explore
   const [exploreLoading, setExploreLoading] = useState(true);
