@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useGoogleLogin } from "@react-oauth/google";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -20,7 +21,9 @@ import {
   UserPlus,
   Shield,
   Key,
+  Chrome,
 } from "lucide-react";
+import { toast } from "sonner";
 import api from "../api/axios";
 import useAuth from "../hooks/useAuth";
 
@@ -77,6 +80,44 @@ export default function SignupForm() {
     localStorage.setItem("persist", persist);
   }, [persist]);
 
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      const res = await api.post(
+        "/auth/google-login",
+        {
+          access_token: credentialResponse.access_token,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      // Store tokens in state or secure storage
+      const accessToken = res.data?.accessToken;
+      const roles = res.data?.roles;
+      const userId = res.data?._id;
+
+      setAuth({
+        userId,
+        accessToken,
+        roles,
+      });
+
+      toast.success("🎉 Logged in with Google!");
+      navigate("/dashboard"); // or wherever you redirect after login
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Google login failed");
+    }
+  };
+
+  const login = useGoogleLogin({
+    onSuccess: handleGoogleLogin,
+    onError: () => {
+      console.log("Google login failed");
+      toast.error("Google login failed");
+    },
+  });
+
   const onSubmit = async (data) => {
     setLoading(true);
     try {
@@ -84,7 +125,6 @@ export default function SignupForm() {
         withCredentials: true,
       });
       if (response.status === 201) {
-        console.log(response);
         setErrorMessage("");
         const accessToken = response.data?.accessToken;
         const roles = response.data?.roles;
@@ -350,6 +390,36 @@ export default function SignupForm() {
                   </Button>
                 </div>
 
+                {/* Divider */}
+                <div className="relative my-4 sm:my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/20"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs sm:text-sm">
+                    <span className="bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 px-4 text-white/60">
+                      or continue with
+                    </span>
+                  </div>
+                </div>
+
+                {/* Google Sign-in Button */}
+                <Button
+                  type="button"
+                  onClick={() => {
+                    login();
+                  }}
+                  className="w-full h-12 sm:h-14 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 hover:border-white/50 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg group"
+                >
+                  <div className="flex items-center justify-center">
+                    <div className="bg-white rounded-full p-1.5 mr-3 group-hover:scale-110 transition-transform duration-200">
+                      <Chrome className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
+                    </div>
+                    <span className="font-medium text-sm sm:text-base">
+                      Continue with Google
+                    </span>
+                  </div>
+                </Button>
+
                 {errorMessage && (
                   <div className="mt-6 p-4 rounded-2xl bg-red-500/20 border border-red-400/30 backdrop-blur-sm">
                     <p className="text-red-300 text-center animate-pulse flex items-center justify-center">
@@ -360,7 +430,7 @@ export default function SignupForm() {
                 )}
 
                 {/* Login Link */}
-                <div className="text-center mt-8 pt-6 border-t border-white/20">
+                <div className="text-center mt-8 ">
                   <p className="text-purple-200 text-sm">
                     Already part of the realm?{" "}
                     <a
@@ -377,7 +447,7 @@ export default function SignupForm() {
         </div>
 
         {/* Right Side - Welcome Section */}
-        <div className="flex-1 flex flex-col justify-center items-center p-8 text-center">
+        <div className="flex-1 hidden lg:flex flex-col justify-center items-center p-8 text-center">
           <div className="max-w-md space-y-6">
             {/* Animated Logo */}
             <div className="relative">
@@ -457,33 +527,6 @@ export default function SignupForm() {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-8px);
-          }
-        }
-        @keyframes twinkle {
-          0%,
-          100% {
-            opacity: 0.3;
-          }
-          50% {
-            opacity: 1;
-          }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-        .animate-twinkle {
-          animation: twinkle 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }

@@ -2,9 +2,13 @@ const User = require("../models/user.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const transporter = require("../utils/mailer.js");
+const { OAuth2Client } = require("google-auth-library");
+const axios = require("axios");
 require("dotenv").config();
 
-// Password validation function
+// Initialize google client
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 const validatePassword = (password) => {
   // Length validation
   if (password.length < 8) {
@@ -190,7 +194,7 @@ const forgotPassword = async (req, res) => {
       { expiresIn: "15m" }
     );
 
-    const link = `${process.env.FRONTEND_URL_LOCAL}/reset-password?token=${token}`;
+    const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     await transporter.sendMail({
       from: `"DreamForge Support" <${process.env.MAIL_USER}>`,
@@ -299,8 +303,97 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const googleLogin = async (req, res) => {
+  const { access_token } = req.body;
+
+  if (!access_token) {
+    return res.status(400).json({ message: "Access token is required" });
+  }
+
+  try {
+    // 1. Fetch user info from Google using access token
+    const googleRes = await axios.get(
+      "https://www.googleapis.com/oauth2/v3/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    );
+
+    const { email, name, picture } = googleRes.data;
+    console.log(email, name, picture);
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ message: "Failed to retrieve Google user info" });
+    }
+
+    // 2. Check if user exists with local credentials
+    const existingLocal = await User.findOne({ email, provider: "local" });
+    if (existingLocal) {
+      return res
+        .status(409)
+        .json({ message: "This email is already registered with a password." });
+    }
+
+    // 3. Find or create user
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = new User({
+        username: name || email.split("@")[0],
+        email,
+        provider: "google",
+        password: " ", // No password for social login
+        isVerified: true,
+        profileImage: picture,
+      });
+
+      await user.save();
+    }
+
+    // 4. Generate tokens
+    const accessToken = jwt.sign(
+      { userId: user._id, roles: user.roles },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // 5. Store refresh token in httpOnly cookie
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: true,
+    });
+
+    return res.status(200).json({
+      accessToken,
+      _id: user._id,
+      roles: user.roles,
+    });
+  } catch (error) {
+    console.error("Google OAuth login error:", error.message || error);
+    return res
+      .status(401)
+      .json({ message: "Google login failed. Please try again." });
+  }
+};
+
 module.exports = {
   changePassword,
   forgotPassword,
   resetPassword,
+  googleLogin,
 };

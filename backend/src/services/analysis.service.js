@@ -280,7 +280,11 @@ const processDreamAnalysis = async (dreamId) => {
 
     return saved.toObject();
   } catch (error) {
-    console.error(`❌ Analysis failed for dream ${dreamId}:`, error.message);
+    console.error(
+      `❌ Analysis failed for dream ${dreamId}:`,
+      error.message,
+      error
+    );
     return {
       error: true,
       message: error.message || "Failed to analyze dream",
