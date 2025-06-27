@@ -132,7 +132,7 @@ export default function CommentInput({ postId, onCommentAdded }) {
         <motion.textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="What are your thoughts on this dream?"
+          placeholder="What are your thoughts on this post?"
           disabled={loading}
           rows={1}
           className={`flex-1 resize-none overflow-hidden rounded-xl p-3 bg-background border transition-all 

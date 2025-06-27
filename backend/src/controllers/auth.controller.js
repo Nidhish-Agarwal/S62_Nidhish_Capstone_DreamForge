@@ -2,12 +2,349 @@ const User = require("../models/user.model.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const transporter = require("../utils/mailer.js");
-const { OAuth2Client } = require("google-auth-library");
 const axios = require("axios");
 require("dotenv").config();
 
-// Initialize google client
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// Helper function to get device info
+const getDeviceInfo = (userAgent) => {
+  // Simple device detection - you might want to use a library like 'ua-parser-js'
+  if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
+    return "Mobile Device";
+  } else if (/Windows/.test(userAgent)) {
+    return "Windows Computer";
+  } else if (/Mac/.test(userAgent)) {
+    return "Mac Computer";
+  } else if (/Linux/.test(userAgent)) {
+    return "Linux Computer";
+  }
+  return "Unknown Device";
+};
+
+const registerUser = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email });
+    if (existingUser) {
+      return res.status(409).json({ message: "User already exists" });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new user
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
+
+    // Save user to DB
+    await newUser.save();
+
+    // Generate Access Token
+    const accessToken = jwt.sign(
+      { userId: newUser._id, roles: newUser.roles },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    // Generating Refresh Token
+    const refreshToken = jwt.sign(
+      { userId: newUser._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // Clean up expired sessions (older than 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    newUser.sessions = newUser.sessions.filter(
+      (session) => session.createdAt > sevenDaysAgo
+    );
+
+    // Add new session
+    const newSession = {
+      refreshToken,
+      deviceInfo: getDeviceInfo(req.headers["user-agent"] || ""),
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers["user-agent"] || "",
+      createdAt: new Date(),
+      lastUsed: new Date(),
+    };
+
+    if (!newUser.sessions) {
+      newUser.sessions = [];
+    }
+    newUser.sessions.push(newSession);
+
+    // Optional: Limit concurrent sessions
+    if (newUser.sessions.length > 5) {
+      newUser.sessions = newUser.sessions.slice(-5);
+    }
+
+    await newUser.save();
+
+    // Storing refreshToken in httpOnly Cookie
+    // This is done to verify and get a new access token upon it's expiration
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: true,
+    });
+
+    return res.status(201).json({
+      message: "User registered successfully",
+      roles: newUser.roles,
+      _id: newUser._id,
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Error in registerUser:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const loginUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // 1. Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // 2. Compare password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    // 3. Check if refresh token cookie exists
+    const existingToken = req.cookies?.jwt;
+    if (existingToken) {
+      try {
+        const decoded = jwt.verify(
+          existingToken,
+          process.env.REFRESH_TOKEN_SECRET
+        );
+
+        if (decoded.userId === user._id.toString()) {
+          const sessionExists = user.sessions.some(
+            (session) => session.refreshToken === existingToken
+          );
+
+          if (sessionExists) {
+            const accessToken = jwt.sign(
+              { userId: user._id, roles: user.roles },
+              process.env.ACCESS_TOKEN_SECRET,
+              { expiresIn: "15m" }
+            );
+
+            return res.status(200).json({
+              message: "Already logged in. Access token refreshed.",
+              roles: user.roles,
+              _id: user._id,
+              accessToken,
+            });
+          } else {
+            // Token valid but session missing — treat as stale
+            res.clearCookie("jwt", {
+              httpOnly: true,
+              sameSite: "None",
+              secure: true,
+            });
+            console.warn(
+              "Valid refresh token but session not found. Clearing cookie."
+            );
+          }
+        } else {
+          // Token mismatch with user
+          res.clearCookie("jwt", {
+            httpOnly: true,
+            sameSite: "None",
+            secure: true,
+          });
+
+          const previousUser = await User.findById(decoded.userId);
+          if (previousUser) {
+            previousUser.sessions = previousUser.sessions.filter(
+              (s) => s.refreshToken !== existingToken
+            );
+            await previousUser.save();
+          }
+
+          console.warn(
+            "Refresh token user mismatch during login. Cookie cleared."
+          );
+        }
+      } catch (err) {
+        console.warn(
+          "Invalid or expired refresh token in login. Continuing fresh login."
+        );
+      }
+    }
+
+    // 4. Create new access and refresh tokens
+    const accessToken = jwt.sign(
+      { userId: user._id, roles: user.roles },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.REFRESH_TOKEN_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // 5. Clean up expired sessions
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    user.sessions =
+      user.sessions?.filter((session) => session.createdAt > sevenDaysAgo) ||
+      [];
+
+    // 6. Add new session
+    const newSession = {
+      refreshToken,
+      deviceInfo: getDeviceInfo(req.headers["user-agent"] || ""),
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers["user-agent"] || "",
+      createdAt: new Date(),
+      lastUsed: new Date(),
+    };
+
+    user.sessions.push(newSession);
+
+    // 7. Optional: Keep only the latest 5 sessions
+    if (user.sessions.length > 5) {
+      user.sessions = user.sessions.slice(-5);
+    }
+
+    await user.save();
+
+    // 8. Set the new refresh token cookie
+    res.cookie("jwt", refreshToken, {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "None",
+      secure: true,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      roles: user.roles,
+      _id: user._id,
+      accessToken,
+    });
+  } catch (error) {
+    console.error("Error in loginUser:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    const cookies = req.cookies;
+
+    // If there is no cookie just send a status
+    if (!cookies?.jwt) return res.sendStatus(204); // No content
+
+    const refreshToken = cookies.jwt;
+
+    // Checking the refresh token in DB
+    const user = await User.findOne({ "sessions.refreshToken": refreshToken });
+    if (!user) {
+      res.clearCookie("jwt", {
+        httpOnly: true,
+        sameSite: "None",
+        secure: true,
+      });
+      return res.sendStatus(204);
+    }
+
+    // Remove the session with the matching refresh token
+    user.sessions = user.sessions.filter(
+      (session) => session.refreshToken !== refreshToken
+    );
+
+    await user.save();
+
+    res.clearCookie("jwt", { httpOnly: true, sameSite: "None", secure: true });
+
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (err) {
+    console.error("❌ Error in logout:", err.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const getActiveSessions = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const currentToken = req.cookies.jwt;
+
+    const sessions = user.sessions.map((session) => ({
+      id: session._id,
+      deviceInfo: session.deviceInfo,
+      ipAddress: session.ipAddress,
+      createdAt: session.createdAt,
+      lastUsed: session.lastUsed,
+      isCurrent: session.refreshToken === currentToken,
+    }));
+
+    return res.status(200).json({ sessions });
+  } catch (error) {
+    console.error("❌ Error in getActiveSessions:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const logoutSessionById = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const initialCount = user.sessions.length;
+    user.sessions = user.sessions.filter((s) => s._id.toString() !== sessionId);
+    if (user.sessions.length === initialCount) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    await user.save();
+    return res.status(200).json({ message: "Logged out from that session" });
+  } catch (error) {
+    console.error("❌ Error in logoutSessionById:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const logoutAllSessions = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const currentToken = req.cookies.jwt;
+
+    user.sessions = user.sessions.filter(
+      (session) => session.refreshToken === currentToken
+    );
+
+    await user.save();
+
+    return res
+      .status(200)
+      .json({ message: "Logged out from all other devices" });
+  } catch (err) {
+    console.error("❌ Error in logoutAllSessions:", err.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 const validatePassword = (password) => {
   // Length validation
@@ -366,7 +703,32 @@ const googleLogin = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    user.refreshToken = refreshToken;
+    // Clean up expired sessions (older than 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    user.sessions = user.sessions.filter(
+      (session) => session.createdAt > sevenDaysAgo
+    );
+
+    // Add new session
+    const newSession = {
+      refreshToken,
+      deviceInfo: getDeviceInfo(req.headers["user-agent"] || ""),
+      ipAddress: req.ip || req.connection.remoteAddress,
+      userAgent: req.headers["user-agent"] || "",
+      createdAt: new Date(),
+      lastUsed: new Date(),
+    };
+
+    if (!user.sessions) {
+      user.sessions = [];
+    }
+    user.sessions.push(newSession);
+
+    // Optional: Limit concurrent sessions
+    if (user.sessions.length > 5) {
+      user.sessions = user.sessions.slice(-5);
+    }
+
     await user.save();
 
     // 5. Store refresh token in httpOnly cookie
@@ -395,4 +757,10 @@ module.exports = {
   forgotPassword,
   resetPassword,
   googleLogin,
+  registerUser,
+  loginUser,
+  logout,
+  getActiveSessions,
+  logoutSessionById,
+  logoutAllSessions,
 };

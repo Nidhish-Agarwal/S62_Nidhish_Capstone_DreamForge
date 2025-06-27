@@ -43,6 +43,20 @@ const UserSchema = new mongoose.Schema(
     refreshToken: {
       type: String, // Stores the hashed refresh token for authentication
     },
+    sessions: [
+      {
+        _id: {
+          type: mongoose.Schema.Types.ObjectId,
+          default: () => new mongoose.Types.ObjectId(),
+        },
+        refreshToken: String,
+        deviceInfo: String,
+        ipAddress: String,
+        userAgent: String,
+        createdAt: { type: Date, default: Date.now },
+        lastUsed: { type: Date, default: Date.now },
+      },
+    ],
     isVerified: {
       type: Boolean,
       default: false, // Tracks if the email is verified

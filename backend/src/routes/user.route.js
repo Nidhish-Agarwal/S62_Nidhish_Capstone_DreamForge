@@ -11,10 +11,7 @@ const ROLES_LIST = require("../config/roles_list.js");
 const router = express.Router();
 
 const {
-  registerUser,
-  loginUser,
   fetchAllUsers,
-  handleLogout,
   fetchUserData,
   updateUserProfile,
   sendFeedback,
@@ -23,10 +20,7 @@ const {
   handleProfilePictureUpload,
 } = require("../middlewares/uploadMiddleware.js");
 
-router.post("/signup", registerUser);
-router.post("/login", loginUser);
 router.get("/", verifyJWT, verifyRoles(ROLES_LIST.Admin), fetchAllUsers);
-router.get("/logout", handleLogout);
 router.get("/get_user_data", verifyJWT, fetchUserData);
 router.put("/update", verifyJWT, handleProfilePictureUpload, updateUserProfile);
 

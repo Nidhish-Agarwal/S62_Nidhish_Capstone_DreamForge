@@ -315,6 +315,7 @@ const CommentItem = ({
           ) : (
             <motion.div
               key="view-mode"
+              className="dark:text-white"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
@@ -353,21 +354,21 @@ const CommentItem = ({
       </CardFooter>
 
       <AnimatePresence>
-        {activeReplyId === comment._id && (
-          <motion.div
-            key="reply-input"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="px-4 pb-3 overflow-hidden"
-          >
-            <ReplyInput
-              placeholder={`Reply to ${comment.user.username}`}
-              onSubmit={handleReplySubmit}
-              onCancel={() => setActiveReplyId(null)}
-            />
-          </motion.div>
-        )}
+        {/* {activeReplyId === comment._id && ( */}
+        <motion.div
+          key="reply-input"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="px-4 pb-3 overflow-hidden"
+        >
+          <ReplyInput
+            placeholder={`Reply to ${comment.user.username}`}
+            onSubmit={handleReplySubmit}
+            onCancel={() => setActiveReplyId(null)}
+          />
+        </motion.div>
+        {/* )} */}
       </AnimatePresence>
 
       {comment.replies?.length > 0 && (

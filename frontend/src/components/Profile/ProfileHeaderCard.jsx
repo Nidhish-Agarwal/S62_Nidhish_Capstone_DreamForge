@@ -238,11 +238,11 @@ const ProfileHeaderCard = ({ user, onUpdateProfile, isUpdating }) => {
                         <Tooltip>
                           <TooltipTrigger>
                             <motion.div
-                              animate={{ rotate: [0, 360] }}
+                              animate={{ scale: [1, 1.2, 1] }}
                               transition={{
-                                duration: 2,
+                                duration: 1.5,
                                 repeat: Infinity,
-                                ease: "linear",
+                                ease: "easeInOut",
                               }}
                             >
                               <CheckCircle className="w-6 h-6 text-green-500" />

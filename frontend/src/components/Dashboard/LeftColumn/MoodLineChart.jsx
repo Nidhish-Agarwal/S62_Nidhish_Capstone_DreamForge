@@ -92,14 +92,14 @@ const MoodIndicator = ({ mood, isActive }) => {
   const moodData = moodScale[mood];
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-300 ${
+      className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-300 text-xs sm:text-sm ${
         isActive ? "bg-white shadow-md scale-105" : "hover:bg-white/50"
       }`}
       style={{ backgroundColor: isActive ? moodData.bgColor : "transparent" }}
     >
-      <span className="text-lg">{moodData.emoji}</span>
+      <span className="text-sm sm:text-lg">{moodData.emoji}</span>
       <span
-        className={`text-sm font-medium ${
+        className={`font-medium ${
           isActive ? "text-gray-900" : "text-gray-600"
         }`}
       >
@@ -143,19 +143,7 @@ const MoodLineChart = ({ summary, loading, hasError }) => {
   const [hoveredMood, setHoveredMood] = useState(null);
   const [animationComplete, setAnimationComplete] = useState(false);
 
-  // Sample data for demonstration
-  const sampleData = [
-    { date: "Day 1", mood: "Neutral", intensity: 50 },
-    { date: "Day 2", mood: "Happy", intensity: 65 },
-    { date: "Day 3", mood: "Euphoric", intensity: 80 },
-    { date: "Day 4", mood: "Happy", intensity: 70 },
-    { date: "Day 5", mood: "Sad", intensity: 30 },
-    { date: "Day 6", mood: "Neutral", intensity: 50 },
-    { date: "Day 7", mood: "Happy", intensity: 75 },
-    { date: "Day 8", mood: "Euphoric", intensity: 85 },
-  ];
-
-  const moodHistory = summary?.moodHistory || sampleData;
+  const moodHistory = summary?.moodHistory;
 
   // Transform data to include mood values for proper trending
   const chartData = moodHistory.map((item) => ({
@@ -213,224 +201,236 @@ const MoodLineChart = ({ summary, loading, hasError }) => {
   const currentMood = chartData[chartData.length - 1]?.mood || "Neutral";
 
   return (
-    <Card className="w-full bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 border-0 shadow-xl">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                Mood Journey
-              </CardTitle>
-              <div className="text-sm text-gray-600 mt-1">
-                Track your emotional evolution through dreams
+    <div className="w-full max-w-full overflow-hidden">
+      <Card className="w-full bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 border-0 shadow-xl">
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <TrendIndicator data={chartData} />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    Your mood progression mapped from dreams, showing emotional
-                    patterns and trends over time
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="pt-2">
-        {chartData?.length ? (
-          <div className="space-y-6">
-            {/* Current Status */}
-            <div className="flex items-center justify-between p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
-              <div className="flex items-center gap-3">
-                <span className="text-3xl">{moodScale[currentMood].emoji}</span>
-                <div>
-                  <div className="font-semibold text-gray-900">
-                    Current Mood
-                  </div>
-                  <div
-                    className="text-lg font-bold"
-                    style={{ color: moodScale[currentMood].color }}
-                  >
-                    {currentMood}
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-gray-600">Average Level</div>
-                <div className="text-xl font-bold text-gray-900">
-                  {averageMood.toFixed(1)}/5
+              <div>
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  Mood Journey
+                </CardTitle>
+                <div className="text-sm text-gray-600 mt-1">
+                  Track your emotional evolution through dreams
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <TrendIndicator data={chartData} />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Info className="w-4 h-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-xs">
+                      Your mood progression mapped from dreams, showing
+                      emotional patterns and trends over time
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+        </CardHeader>
 
-            {/* Chart */}
-            <div className="h-80 w-full p-4 bg-white/40 backdrop-blur-sm rounded-xl border border-white/20">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-                >
-                  <defs>
-                    <linearGradient
-                      id="moodGradient"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
+        <CardContent className="pt-2">
+          {chartData?.length ? (
+            <div className="space-y-6">
+              {/* Current Status */}
+              <div className="flex items-center justify-between p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">
+                    {moodScale[currentMood].emoji}
+                  </span>
+                  <div>
+                    <div className="font-semibold text-gray-900">
+                      Current Mood
+                    </div>
+                    <div
+                      className="text-lg font-bold"
+                      style={{ color: moodScale[currentMood].color }}
                     >
-                      <stop offset="0%" stopColor="#8B5CF6" stopOpacity={0.3} />
-                      <stop
-                        offset="100%"
-                        stopColor="#8B5CF6"
-                        stopOpacity={0.05}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="#E5E7EB"
-                    strokeOpacity={0.5}
-                  />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "#6B7280" }}
-                  />
-                  <YAxis
-                    domain={[1, 5]}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "#6B7280" }}
-                    tickFormatter={(value) => {
-                      const moodEntry = Object.entries(moodScale).find(
-                        ([_, data]) => data.value === value
-                      );
-                      return moodEntry ? moodEntry[1].emoji : value;
-                    }}
-                  />
-                  <RechartsTooltip content={<CustomTooltip />} />
-                  <ReferenceLine
-                    y={3}
-                    stroke="#6B7280"
-                    strokeDasharray="2 2"
-                    strokeOpacity={0.5}
-                    label={{ value: "Neutral", position: "right", offset: 10 }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="moodValue"
-                    stroke="url(#gradient)"
-                    strokeWidth={3}
-                    fill="url(#moodGradient)"
-                    dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 6 }}
-                    activeDot={{
-                      r: 8,
-                      fill: "#8B5CF6",
-                      stroke: "#fff",
-                      strokeWidth: 2,
-                    }}
-                    animationDuration={2000}
-                    animationEasing="ease-out"
-                  />
-                  <defs>
-                    <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="#8B5CF6" />
-                      <stop offset="50%" stopColor="#3B82F6" />
-                      <stop offset="100%" stopColor="#06B6D4" />
-                    </linearGradient>
-                  </defs>
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+                      {currentMood}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-600">Average Level</div>
+                  <div className="text-xl font-bold text-gray-900">
+                    {averageMood.toFixed(1)}/5
+                  </div>
+                </div>
+              </div>
 
-            {/* Mood Scale Legend */}
-            <div className="p-4 bg-white/40 backdrop-blur-sm rounded-xl border border-white/20">
-              <div className="text-sm font-medium text-gray-700 mb-3">
-                Mood Scale
+              {/* Chart */}
+              <div className="h-80 w-full p-2 sm:p-4 bg-white/40 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: 10, bottom: 10 }} // Reduced margins
+                  >
+                    <defs>
+                      <linearGradient
+                        id="moodGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#8B5CF6"
+                          stopOpacity={0.3}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#8B5CF6"
+                          stopOpacity={0.05}
+                        />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="#E5E7EB"
+                      strokeOpacity={0.5}
+                    />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#6B7280" }}
+                    />
+                    <YAxis
+                      domain={[1, 5]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#6B7280" }}
+                      tickFormatter={(value) => {
+                        const moodEntry = Object.entries(moodScale).find(
+                          ([_, data]) => data.value === value
+                        );
+                        return moodEntry ? moodEntry[1].emoji : value;
+                      }}
+                    />
+                    <RechartsTooltip content={<CustomTooltip />} />
+                    <ReferenceLine
+                      y={3}
+                      stroke="#6B7280"
+                      strokeDasharray="2 2"
+                      strokeOpacity={0.5}
+                      label={{
+                        value: "Neutral",
+                        position: "right",
+                        offset: 10,
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="moodValue"
+                      stroke="url(#gradient)"
+                      strokeWidth={3}
+                      fill="url(#moodGradient)"
+                      dot={{ fill: "#8B5CF6", strokeWidth: 2, r: 6 }}
+                      activeDot={{
+                        r: 8,
+                        fill: "#8B5CF6",
+                        stroke: "#fff",
+                        strokeWidth: 2,
+                      }}
+                      animationDuration={2000}
+                      animationEasing="ease-out"
+                    />
+                    <defs>
+                      <linearGradient id="gradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#8B5CF6" />
+                        <stop offset="50%" stopColor="#3B82F6" />
+                        <stop offset="100%" stopColor="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(moodScale).map(([mood, data]) => (
-                  <MoodIndicator
-                    key={mood}
-                    mood={mood}
-                    isActive={hoveredMood === mood}
-                    onMouseEnter={() => setHoveredMood(mood)}
-                    onMouseLeave={() => setHoveredMood(null)}
-                  />
-                ))}
-              </div>
-            </div>
 
-            {/* Insights */}
-            {animationComplete && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 bg-green-50 rounded-xl border border-green-200">
-                  <div className="text-green-800 font-medium text-sm">
-                    Peak Mood
-                  </div>
-                  <div className="text-green-900 font-bold text-lg">
-                    {Object.entries(moodScale).find(
-                      ([_, data]) =>
-                        data.value ===
-                        Math.max(...chartData.map((d) => d.moodValue))
-                    )?.[0] || "Unknown"}
-                  </div>
+              {/* Mood Scale Legend */}
+              <div className="p-2 sm:p-4 bg-white/40 backdrop-blur-sm rounded-xl border border-white/20">
+                <div className="text-sm font-medium text-gray-700 mb-3">
+                  Mood Scale
                 </div>
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <div className="text-blue-800 font-medium text-sm">
-                    Total Dreams
-                  </div>
-                  <div className="text-blue-900 font-bold text-lg">
-                    {chartData.length}
-                  </div>
-                </div>
-                <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
-                  <div className="text-purple-800 font-medium text-sm">
-                    Mood Stability
-                  </div>
-                  <div className="text-purple-900 font-bold text-lg">
-                    {Math.abs(
-                      chartData[chartData.length - 1]?.moodValue -
-                        chartData[0]?.moodValue
-                    ) <= 1
-                      ? "Stable"
-                      : "Variable"}
-                  </div>
+                <div className="flex flex-wrap gap-1 sm:gap-2 justify-center sm:justify-start">
+                  {Object.entries(moodScale).map(([mood, data]) => (
+                    <MoodIndicator
+                      key={mood}
+                      mood={mood}
+                      isActive={hoveredMood === mood}
+                      onMouseEnter={() => setHoveredMood(mood)}
+                      onMouseLeave={() => setHoveredMood(null)}
+                    />
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center h-64 text-center space-y-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
-              <Sparkles className="w-8 h-8 text-white" />
+
+              {/* Insights */}
+              {animationComplete && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                  <div className="p-4 bg-green-50 rounded-xl border border-green-200">
+                    <div className="text-green-800 font-medium text-sm">
+                      Peak Mood
+                    </div>
+                    <div className="text-green-900 font-bold text-lg">
+                      {Object.entries(moodScale).find(
+                        ([_, data]) =>
+                          data.value ===
+                          Math.max(...chartData.map((d) => d.moodValue))
+                      )?.[0] || "Unknown"}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                    <div className="text-blue-800 font-medium text-sm">
+                      Total Dreams
+                    </div>
+                    <div className="text-blue-900 font-bold text-lg">
+                      {chartData.length}
+                    </div>
+                  </div>
+                  <div className="p-4 bg-purple-50 rounded-xl border border-purple-200">
+                    <div className="text-purple-800 font-medium text-sm">
+                      Mood Stability
+                    </div>
+                    <div className="text-purple-900 font-bold text-lg">
+                      {Math.abs(
+                        chartData[chartData.length - 1]?.moodValue -
+                          chartData[0]?.moodValue
+                      ) <= 1
+                        ? "Stable"
+                        : "Variable"}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div>
-              <div className="text-lg font-medium text-gray-900 mb-2">
-                Start Your Mood Journey
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64 text-center space-y-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-blue-400 rounded-full flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-white" />
               </div>
-              <div className="text-gray-600 max-w-sm">
-                Record your dreams to begin tracking mood patterns and emotional
-                insights
+              <div>
+                <div className="text-lg font-medium text-gray-900 mb-2">
+                  Start Your Mood Journey
+                </div>
+                <div className="text-gray-600 max-w-sm">
+                  Record your dreams to begin tracking mood patterns and
+                  emotional insights
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
