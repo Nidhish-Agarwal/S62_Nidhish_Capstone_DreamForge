@@ -20,6 +20,10 @@ app.use(credentials);
 // app.options("*", cors(corsOptions));
 app.use(cors(corsOptions));
 
+app.get("/", (req, res) => {
+  res.send("Welcome to DreamForge API");
+});
+
 app.use("/user", userRouter);
 app.use("/refresh", tokenRouter);
 app.use("/dream", dreamRouter);

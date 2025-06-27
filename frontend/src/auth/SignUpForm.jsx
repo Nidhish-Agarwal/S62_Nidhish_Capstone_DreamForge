@@ -1,5 +1,4 @@
 import { useForm } from "react-hook-form";
-import { useGoogleLogin } from "@react-oauth/google";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
@@ -21,11 +20,11 @@ import {
   UserPlus,
   Shield,
   Key,
-  Chrome,
 } from "lucide-react";
 import { toast } from "sonner";
 import api from "../api/axios";
 import useAuth from "../hooks/useAuth";
+import GoogleLoginButton from "./GoogleLoginButton";
 
 // Validation Schema
 const signupSchema = z
@@ -80,48 +79,10 @@ export default function SignupForm() {
     localStorage.setItem("persist", persist);
   }, [persist]);
 
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const res = await api.post(
-        "/auth/google-login",
-        {
-          access_token: credentialResponse.access_token,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      // Store tokens in state or secure storage
-      const accessToken = res.data?.accessToken;
-      const roles = res.data?.roles;
-      const userId = res.data?._id;
-
-      setAuth({
-        userId,
-        accessToken,
-        roles,
-      });
-
-      toast.success("🎉 Logged in with Google!");
-      navigate("/dashboard"); // or wherever you redirect after login
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Google login failed");
-    }
-  };
-
-  const login = useGoogleLogin({
-    onSuccess: handleGoogleLogin,
-    onError: () => {
-      console.log("Google login failed");
-      toast.error("Google login failed");
-    },
-  });
-
   const onSubmit = async (data) => {
     setLoading(true);
     try {
-      const response = await api.post("/user/signup", data, {
+      const response = await api.post("/auth/signup", data, {
         withCredentials: true,
       });
       if (response.status === 201) {
@@ -137,6 +98,7 @@ export default function SignupForm() {
         navigate("/dashboard");
       }
     } catch (err) {
+      toast.error(err.message || "Login failed");
       if (!err?.response) {
         setErrorMessage("No server response. Please check your internet.");
       } else if (err.response?.status === 409) {
@@ -221,7 +183,7 @@ export default function SignupForm() {
                   </div>
                 </div>
                 <CardTitle className="text-3xl font-bold text-white mb-2">
-                  Join the Dream Realm
+                  SignUp to Dream Realm
                 </CardTitle>
                 <p className="text-purple-200 opacity-90">
                   Begin your mystical journey today
@@ -403,23 +365,10 @@ export default function SignupForm() {
                 </div>
 
                 {/* Google Sign-in Button */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    login();
-                  }}
-                  className="w-full h-12 sm:h-14 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 hover:border-white/50 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg group"
-                >
-                  <div className="flex items-center justify-center">
-                    <div className="bg-white rounded-full p-1.5 mr-3 group-hover:scale-110 transition-transform duration-200">
-                      <Chrome className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                    </div>
-                    <span className="font-medium text-sm sm:text-base">
-                      Continue with Google
-                    </span>
-                  </div>
-                </Button>
-
+                <GoogleLoginButton
+                  setLoading={setLoading}
+                  setErrorMessage={setErrorMessage}
+                />
                 {errorMessage && (
                   <div className="mt-6 p-4 rounded-2xl bg-red-500/20 border border-red-400/30 backdrop-blur-sm">
                     <p className="text-red-300 text-center animate-pulse flex items-center justify-center">

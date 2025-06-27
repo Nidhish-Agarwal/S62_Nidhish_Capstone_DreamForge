@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGoogleLogin } from "@react-oauth/google";
 import {
   Eye,
   EyeOff,
@@ -18,11 +17,11 @@ import {
   CloudMoon,
   Zap,
   Heart,
-  Chrome,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "../api/axios.js";
 import useAuth from "../hooks/useAuth.jsx";
+import GoogleLoginButton from "./GoogleLoginButton.jsx";
 
 // Validation Schema
 const loginSchema = z.object({
@@ -51,6 +50,12 @@ export default function LoginForm() {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    if (location.state?.from) {
+      setRedirectMessage("You need to log in to access this feature.");
+    }
+  }, [location.state?.from]);
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -65,49 +70,11 @@ export default function LoginForm() {
     localStorage.setItem("persist", persist);
   }, [persist]);
 
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const res = await axios.post(
-        "/auth/google-login",
-        {
-          access_token: credentialResponse.access_token,
-        },
-        {
-          withCredentials: true,
-        }
-      );
-
-      // Store tokens in state or secure storage
-      const accessToken = res.data?.accessToken;
-      const roles = res.data?.roles;
-      const userId = res.data?._id;
-
-      setAuth({
-        userId,
-        accessToken,
-        roles,
-      });
-
-      toast.success("🎉 Logged in with Google!");
-      navigate(from, { replace: true });
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Google login failed");
-    }
-  };
-
-  const login = useGoogleLogin({
-    onSuccess: handleGoogleLogin,
-    onError: () => {
-      console.log("Google login failed");
-      toast.error("Google login failed");
-    },
-  });
-
   const onSubmit = async (data) => {
     setLoading(true);
 
     try {
-      const response = await axios.post("/user/login", data, {
+      const response = await axios.post("/auth/login", data, {
         withCredentials: true,
       });
 
@@ -124,6 +91,7 @@ export default function LoginForm() {
         navigate(from, { replace: true });
       }
     } catch (err) {
+      toast.error(err.message || "Login failed");
       if (!err?.response) {
         console.log(err);
         setErrorMessage("No server response. Please check your internet.");
@@ -269,7 +237,7 @@ export default function LoginForm() {
                   </div>
                 </div>
                 <CardTitle className="text-3xl font-bold text-white mb-2">
-                  Enter Your Realm
+                  Login to Your Realm
                 </CardTitle>
                 <p className="text-purple-200 opacity-90">
                   Access your personal dream sanctuary
@@ -407,22 +375,10 @@ export default function LoginForm() {
                 </div>
 
                 {/* Google Sign-in Button */}
-                <Button
-                  type="button"
-                  onClick={() => {
-                    login();
-                  }}
-                  className="w-full h-12 sm:h-14 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white border border-white/30 hover:border-white/50 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg group"
-                >
-                  <div className="flex items-center justify-center">
-                    <div className="bg-white rounded-full p-1.5 mr-3 group-hover:scale-110 transition-transform duration-200">
-                      <Chrome className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                    </div>
-                    <span className="font-medium text-sm sm:text-base">
-                      Continue with Google
-                    </span>
-                  </div>
-                </Button>
+                <GoogleLoginButton
+                  setLoading={setLoading}
+                  setErrorMessage={setErrorMessage}
+                />
 
                 {errorMessage && (
                   <div className="mt-6 p-4 rounded-2xl bg-red-500/20 border border-red-400/30 backdrop-blur-sm">

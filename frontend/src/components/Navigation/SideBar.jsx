@@ -7,6 +7,8 @@ import {
   FaMoon,
   FaTrophy,
   FaQuestionCircle,
+  FaTimes,
+  FaBars,
 } from "react-icons/fa";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -49,10 +51,8 @@ export default function SideBar({ currentPath }) {
         const response = await axiosPrivate.get("/user/get_user_data", {
           signal: controller.signal,
         });
-        // console.log(response.data);
         isMounted && setUser(response.data.user);
       } catch (err) {
-        // console.error(err);
         if (axios.isCancel(err)) {
           console.log("Request was canceled:", err.message);
         } else if (err.response?.status === 403) {
@@ -80,32 +80,54 @@ export default function SideBar({ currentPath }) {
 
   return (
     <>
-      {/* Overlay for smaller screen */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-md z-40 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
-      <div
-        className={`fixed md:static top-0 left-0 h-screen backdrop-blur-lg bg-white/10 border-r border-white/20 md:bg-transparent md:translate-x-0 z-50 transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
-      >
-        <div className="flex flex-col h-full p-6 font-Jaldi dark:text-white ">
-          {/* X button visible on smaller screens */}
-          <button
-            className="md:hidden text-gray-300 self-end text-4xl hover:text-white absolute top-1 left-5"
+      {/* Overlay for mobile */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
             onClick={() => setIsOpen(false)}
-          >
-            &times;
-          </button>
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <div
+        className={`fixed md:static top-0 left-0 h-screen w-72 md:w-56
+          backdrop-blur-lg bg-white/10 dark:bg-gray-900/20
+          border-r border-white/20 dark:border-gray-700/30
+          shadow-2xl md:shadow-none
+          md:backdrop-blur-lg md:bg-white/10 md:dark:bg-gray-900/20
+          md:border-r md:border-white/20 md:dark:border-gray-700/30
+          md:translate-x-0 z-50 transition-transform duration-300
+          ${isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
+      >
+        <div className="flex flex-col h-full p-6 font-Jaldi text-gray-900 dark:text-white">
+          {/* Close button for mobile - positioned outside user profile area */}
+          <div className="md:hidden flex justify-end mb-4">
+            <button
+              className="p-2 rounded-lg bg-white/20 dark:bg-gray-800/40 
+                         text-gray-800 dark:text-gray-200 
+                         hover:bg-white/30 dark:hover:bg-gray-700/60
+                         hover:text-gray-900 dark:hover:text-white
+                         transition-all backdrop-blur-sm hover:scale-110"
+              onClick={() => setIsOpen(false)}
+            >
+              <FaTimes className="text-lg" />
+            </button>
+          </div>
+
           {/* User Profile */}
           <div className="flex items-center mb-6">
-            <Avatar className="w-14 h-14">
+            <Avatar className="w-14 h-14 ring-2 ring-white/30 dark:ring-gray-600/50">
               <AvatarImage src={user.profileImage} alt="Profile Picture" />
-              <AvatarFallback className="text-gray-600 dark:text-white font-bold text-2xl">
+              <AvatarFallback
+                className="bg-gradient-to-br from-pink-500 to-purple-600 
+                                         text-white font-bold text-xl"
+              >
                 {user?.username
                   ? user.username
                       .split(" ")
@@ -116,13 +138,15 @@ export default function SideBar({ currentPath }) {
               </AvatarFallback>
             </Avatar>
             <h2
-              className="text-xl max-w-[100px] ml-4 truncate overflow-hidden whitespace-nowrap"
+              className="text-xl max-w-[120px] ml-4 truncate font-semibold 
+                         text-gray-900 dark:text-white drop-shadow-sm"
               title={user.username}
             >
               {user.username}
             </h2>
           </div>
-          {/* Nav items */}
+
+          {/* Navigation */}
           <nav>
             <ul className="space-y-2">
               <NavItem
@@ -154,7 +178,7 @@ export default function SideBar({ currentPath }) {
             </ul>
           </nav>
 
-          <hr className="my-2 dark:border-white/20 border-black" />
+          <hr className="my-4 border-white/30 dark:border-gray-600/50" />
 
           <ul className="space-y-2">
             <NavItem
@@ -171,114 +195,160 @@ export default function SideBar({ currentPath }) {
             />
           </ul>
 
-          {/* <ul className="mt-auto">
-            <NavItem
-              icon={<FaSignOutAlt />}
-              text="Logout"
-              pathName="logout"
-              currentPath={currentPath}
-            />
-          </ul> */}
-          <ul className="mt-auto">
-            <li className="relative group">
-              <AlertDialog>
-                <AlertDialogTrigger className="w-full">
-                  <div
-                    // onClick={() => setIsLogoutOpen(true)}
-                    className="flex w-full items-center px-4 py-3 rounded-lg text-gray-700 transition dark:text-gray-200 hover:bg-white/20 dark:hover:bg-white/10 cursor-pointer"
-                  >
-                    <span className="text-sm mr-2">
-                      <FaSignOutAlt />
-                    </span>
-                    Logout
-                  </div>
-                </AlertDialogTrigger>
+          {/* Logout Button */}
+          <div className="mt-auto pt-4">
+            <AlertDialog>
+              <AlertDialogTrigger className="w-full">
+                <div
+                  className="flex w-full items-center px-4 py-3 rounded-lg
+                           text-gray-900 dark:text-gray-200
+                           hover:bg-white/20 dark:hover:bg-white/10
+                           transition-all duration-200 backdrop-blur-sm
+                           hover:shadow-lg cursor-pointer group
+                           hover:scale-105 hover:text-red-600 dark:hover:text-red-400"
+                >
+                  <span className="text-sm mr-3 group-hover:scale-110 transition-transform">
+                    <FaSignOutAlt />
+                  </span>
+                  <span className="font-medium">Logout</span>
+                </div>
+              </AlertDialogTrigger>
 
-                <AlertDialogContent className="dark:bg-white/10 backdrop-blur-lg">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="dark:text-white">
-                      Confirm Logout?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure that you want to Logout?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="dark:text-white">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>
-                      Continue
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </li>
-          </ul>
+              <AlertDialogContent
+                className="bg-white/90 dark:bg-gray-900/90 
+                                           backdrop-blur-xl border border-white/20 
+                                           dark:border-gray-700/50"
+              >
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-gray-900 dark:text-white">
+                    Confirm Logout
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-700 dark:text-gray-300">
+                    Are you sure you want to logout?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="text-gray-800 dark:text-gray-200">
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white"
+                  >
+                    Continue
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       </div>
-      {/* Hamburger menu visible on smaller screens */}
-      <button
-        onClick={() => setIsOpen(true)}
-        type="button"
-        className={`fixed top-4 left-4 md:hidden z-50 text-gray-200 hover:text-white focus:outline-none ${
-          isOpen ? "hidden" : ""
-        }`}
-        aria-controls="mobile-menu"
-        aria-expanded={isOpen}
-      >
-        <svg
-          className="h-6 w-6"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+
+      {/* Enhanced Hamburger Menu Button */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed top-2 left-2 md:hidden z-50 p-3 rounded-lg
+                   bg-white/30 dark:bg-gray-900/40
+                   backdrop-blur-md shadow-lg
+                   border border-white/40 dark:border-gray-700/60
+                   text-gray-900 dark:text-gray-100
+                   hover:bg-white/40 dark:hover:bg-gray-900/60
+                   hover:shadow-xl hover:border-white/60 dark:hover:border-gray-600/80
+                   hover:scale-110 transition-all duration-200 group"
+          aria-label="Open menu"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-      </button>
+          <FaBars className="text-lg group-hover:rotate-180 transition-transform duration-300" />
+        </button>
+      )}
     </>
   );
 }
 
 function NavItem({ icon, text, pathName, currentPath, disabled, tooltip }) {
+  const isActive = currentPath.includes(pathName);
+
   const content = (
-    <Link
-      to={disabled ? "#" : `/${pathName}`}
-      className={cn(
-        "flex items-center px-4 py-3 rounded-lg transition",
-        "text-gray-700 dark:text-gray-200",
-        {
-          "opacity-50 cursor-not-allowed pointer-events-none": disabled,
-          "dark:bg-white/20 bg-[#FC607F] text-white shadow-lg":
-            currentPath.includes(pathName),
-          "dark:hover:bg-white/10 hover:bg-white/20":
-            !currentPath.includes(pathName),
-        }
-      )}
+    <motion.div
+      whileHover={{ scale: disabled ? 1 : 1.02 }}
+      whileTap={{ scale: disabled ? 1 : 0.98 }}
     >
-      <span className="text-sm mr-2">{icon}</span>
-      {text}
-      {disabled && (
-        <span className="ml-1" role="img" aria-label="disabled">
-          🚫
+      <Link
+        to={disabled ? "#" : `/${pathName}`}
+        className={cn(
+          "flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative overflow-hidden",
+          {
+            // Disabled state
+            "opacity-50 cursor-not-allowed pointer-events-none": disabled,
+
+            // Active state - enhanced with better contrast
+            "bg-gradient-to-r from-blue-500/90 to-purple-600/90 text-white shadow-lg border border-blue-400/30":
+              isActive && !disabled,
+
+            // Inactive state - glassy hover effect
+            "text-gray-700 dark:text-gray-200 hover:bg-gradient-to-r hover:from-white/20 hover:to-white/10 dark:hover:from-gray-800/40 dark:hover:to-gray-800/20 hover:backdrop-blur-sm hover:border-white/30 dark:hover:border-gray-600/30 hover:shadow-md border border-transparent":
+              !isActive && !disabled,
+          }
+        )}
+      >
+        {/* Glassy background effect on hover */}
+        {!isActive && !disabled && (
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-white/0 to-white/0 
+                         group-hover:from-white/10 group-hover:to-white/5
+                         dark:group-hover:from-gray-800/20 dark:group-hover:to-gray-800/10
+                         rounded-xl transition-all duration-200 backdrop-blur-sm"
+          />
+        )}
+
+        <span
+          className={cn(
+            "text-sm mr-3 relative z-10 transition-transform duration-200",
+            "group-hover:scale-110",
+            isActive ? "drop-shadow-sm" : ""
+          )}
+        >
+          {icon}
         </span>
-      )}
-    </Link>
+
+        <span
+          className={cn(
+            "font-medium relative z-10",
+            isActive ? "drop-shadow-sm" : ""
+          )}
+        >
+          {text}
+        </span>
+
+        {disabled && (
+          <span
+            className="ml-auto text-xs opacity-60"
+            role="img"
+            aria-label="disabled"
+          >
+            🚧
+          </span>
+        )}
+      </Link>
+    </motion.div>
   );
 
   return (
-    <li className="list-none">
+    <motion.li
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3 }}
+      className="list-none"
+    >
       {disabled ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>{content}</TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent
+              side="right"
+              className="bg-gray-900/95 dark:bg-gray-800/95 backdrop-blur-sm 
+                         text-gray-100 border border-gray-700/50"
+            >
               <p>{tooltip}</p>
             </TooltipContent>
           </Tooltip>
@@ -286,6 +356,6 @@ function NavItem({ icon, text, pathName, currentPath, disabled, tooltip }) {
       ) : (
         content
       )}
-    </li>
+    </motion.li>
   );
 }

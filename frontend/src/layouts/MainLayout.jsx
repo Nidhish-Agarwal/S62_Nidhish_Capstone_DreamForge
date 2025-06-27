@@ -67,7 +67,7 @@ function MainLayout({ children }) {
 
         {/* Main Content */}
 
-        <div className="mt-36 md:mt-20  max-h-[calc(100%-4rem)] relative overflow-auto">
+        <div className="mt-36 md:mt-20  max-h-[calc(100%-4rem) max-h-full relative overflow-auto">
           {children}
         </div>
       </div>

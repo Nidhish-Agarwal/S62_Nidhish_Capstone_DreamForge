@@ -20,13 +20,29 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { MessageSquare, Pencil, Trash2 } from "lucide-react";
+import {
+  MessageSquare,
+  Pencil,
+  Trash2,
+  MoreHorizontal,
+  Calendar,
+  Sparkles,
+  Brain,
+  MapPin,
+} from "lucide-react";
 import HeartIcon from "../icons/HeartIcon";
 import BookmarkIcon from "../icons/BookmarkIcon";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import NoImage from "../../assets/No-Image.png";
@@ -34,7 +50,7 @@ import PostOverlay from "../PostOverlay/PostOverlay";
 import DreamPersonalityTypes from "../../data/DreamPersonalityTypes.json";
 
 const PostCard = ({ post, updatePost, onDelete }) => {
-  const { user, caption, image, commentCount, createdAt, title } = post;
+  const { user, caption, createdAt, title } = post;
   const auth = useAuth();
   const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   const axiosPrivate = useAxiosPrivate();
@@ -61,6 +77,21 @@ const PostCard = ({ post, updatePost, onDelete }) => {
     (d) => d.id === post?.dream?.analysis?.dream_personality_type?.type
   );
 
+  const getMoodEmoji = (mood) => {
+    const moodMap = {
+      Terrified: "😱",
+      Sad: "😢",
+      Neutral: "😐",
+      Happy: "😊",
+      Euphoric: "🤩",
+    };
+    return moodMap[mood] || "🌙";
+  };
+
+  const getTimeAgo = (date) => {
+    return formatDistanceToNow(new Date(date), { addSuffix: true });
+  };
+
   const handleLike = async () => {
     try {
       const response = await axiosPrivate.put(`community/${post._id}/like`);
@@ -72,7 +103,12 @@ const PostCard = ({ post, updatePost, onDelete }) => {
         likeCount: response.data.likeCount,
       };
       updatePost(updated);
+
+      if (response.data.liked) {
+        toast.success("Post liked! ❤️");
+      }
     } catch (error) {
+      toast.error("Failed to like dream");
       console.error("Error liking post", error);
     }
   };
@@ -88,7 +124,14 @@ const PostCard = ({ post, updatePost, onDelete }) => {
         bookmarkCount: response.data.bookmarkCount,
       };
       updatePost(updated);
+
+      if (response.data.bookmarked) {
+        toast.success("Post bookmarked! 📌");
+      } else {
+        toast.success("Bookmark removed");
+      }
     } catch (error) {
+      toast.error("Failed to bookmark post");
       console.error("Error bookmarking post", error);
     }
   };
@@ -96,7 +139,7 @@ const PostCard = ({ post, updatePost, onDelete }) => {
   const handleEdit = async () => {
     try {
       if (editedText.length < 1) {
-        toast.error("Length of the caption should be atleast 1 character");
+        toast.error("Caption cannot be empty");
         return;
       }
 
@@ -109,386 +152,331 @@ const PostCard = ({ post, updatePost, onDelete }) => {
         isEdited: true,
       };
       updatePost(updatedPost);
-      toast.success("Post updated.");
+      toast.success("Post updated successfully! ✨");
       setIsEditing(false);
     } catch (err) {
-      toast.error(`Failed to update: ${err.message}`);
+      toast.error("Failed to update post");
+      console.error("Edit error:", err);
     }
   };
 
   const handleDelete = async () => {
     try {
       await axiosPrivate.delete(`/community/post/${post._id}`);
-      // Remove the post from the UI
       onDelete(post._id);
-
-      toast.success("Post deleted.");
+      toast.success("Post deleted successfully");
     } catch (err) {
-      toast.error(`Failed to delete Post. ${err.message}`);
+      toast.error("Failed to delete post");
+      console.error("Delete error:", err);
     }
   };
 
   return (
-    <div>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 10 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-        whileHover={{
-          scale: 1.02,
-          boxShadow: "0 0 20px rgba(255, 255, 255, 0.1)",
-        }}
-        className="w-full max-w-2xl"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="w-full max-w-lg mx-auto"
+    >
+      <Card
+        className="group relative overflow-hidden bg-gradient-to-br from-slate-50 to-white dark:from-gray-900 dark:to-gray-800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer"
+        onClick={() => setIsOverlayOpen(true)}
       >
-        <Card
-          className="relative flex gap-2 items-center justify-between bg-gradient-to-r from-[#3a1c3f] via-[#4a254a] to-[#2c1230] text-white p-4 rounded-2xl border border-white/10 shadow-[0_0_12px_rgba(255,255,255,0.05)] hover:shadow-[0_0_20px_rgba(255,255,255,0.12)] transition-all duration-300"
-          onClick={() => setIsOverlayOpen(true)}
-        >
-          {/* Left Side */}
-          <div className="flex flex-col items-start gap-3 w-2/3">
-            {/* User Info */}
-            <CardHeader className="p-0 flex-row w-full">
-              <div className="flex items-center gap-2">
-                <Avatar>
-                  <AvatarImage src={user.profileImage} alt="Profile Picture" />
-                  <AvatarFallback className="text-gray-600 dark:text-white font-bold text-2xl">
-                    {user?.username
-                      ? user.username
-                          .split(" ")
-                          .map((word) => word[0])
-                          .join("")
-                          .toUpperCase()
-                      : "?"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="flex gap-2 items-center text-sm font-medium line-clamp-1 max-w-[100px] sm:max-w-[150px] md:max-w-[200px] lg:max-w-[250px] xl:max-w-xs">
+        {/* Header */}
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-10 h-10 ring-2 ring-purple-100 dark:ring-purple-900">
+                <AvatarImage src={user.profileImage} alt={user.username} />
+                <AvatarFallback className="bg-gradient-to-br from-purple-400 to-pink-400 text-white font-semibold">
+                  {user?.username
+                    ? user.username
+                        .split(" ")
+                        .map((word) => word[0])
+                        .join("")
+                        .toUpperCase()
+                    : "?"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-gray-900 dark:text-white truncate">
                     {user.username}
-                    {post.isEdited && (
-                      <span className="text-xs text-muted-foreground italic">
-                        (edited)
-                      </span>
-                    )}
-                  </p>
-
-                  <p className="text-xs text-white/70">
-                    {format(new Date(createdAt), "dd MMM yyyy")}
-                  </p>
+                  </h3>
+                  {post.isEdited && (
+                    <Badge variant="secondary" className="text-xs px-2 py-0">
+                      edited
+                    </Badge>
+                  )}
                 </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {getTimeAgo(createdAt)}
+                </p>
               </div>
-              {isOwner && (
-                <div className="ml-auto flex gap-1">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setIsEditing(true);
-                          }}
-                        >
-                          <Pencil className="w-4 h-4 text-muted-foreground" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Edit</TooltipContent>
-                    </Tooltip>
+            </div>
 
-                    <Dialog>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete</TooltipContent>
-                      </Tooltip>
-
-                      <DialogContent onClick={(e) => e.stopPropagation()}>
-                        <div className="flex flex-col gap-4">
-                          <DialogTitle className="text-lg font-semibold">
-                            Confirm Delete
-                          </DialogTitle>
-
-                          <DialogDescription className="text-sm text-muted-foreground">
-                            Are you sure you want to delete this Post?
-                          </DialogDescription>
-                          <div className="flex justify-end gap-2">
-                            <DialogClose asChild>
-                              <Button variant="ghost">Cancel</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                              <Button
-                                variant="destructive"
-                                onClick={handleDelete}
-                              >
-                                Delete
-                              </Button>
-                            </DialogClose>
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </TooltipProvider>
-                </div>
-              )}
-            </CardHeader>
-
-            {/* Title & Description */}
-            <CardContent className="p-0 mt-2 w-full">
-              {/* Dream Title if available */}
-              {post.title && (
-                <motion.p
-                  className="text-base font-semibold mb-1 text-pink-300 tracking-wide"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  {post.title}
-                </motion.p>
-              )}
-
-              {/* Caption */}
-              <AnimatePresence mode="wait">
-                {isEditing ? (
-                  <motion.div
-                    key="edit-mode"
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col gap-2 "
+            {/* Options Menu */}
+            {isOwner && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <textarea
-                      className="w-full p-2 text-sm border border-gray-300 text-black  rounded-md resize-none"
-                      value={editedText}
-                      onChange={(e) => setEditedText(e.target.value)}
-                      rows={3}
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit();
-                        }}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsEditing(false);
-                          setEditedText(post.caption);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="view-mode"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
-                    transition={{ duration: 0.2 }}
-                    className="text-sm text-white/80 leading-snug mb-2 line-clamp-2"
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
                   >
-                    {post.caption}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* Hashtags */}
-              <div className="flex flex-wrap gap-2 ">
-                {post.hashtags.map((tag, idx) => (
-                  <motion.div
-                    key={idx}
-                    whileHover={{ scale: 1.05 }}
-                    className="text-xs bg-white/20 px-3 py-1 rounded-full text-white font-medium backdrop-blur-sm border border-white/10 shadow-sm"
-                  >
-                    #{tag}
-                  </motion.div>
-                ))}
-              </div>
-            </CardContent>
-
-            {/* Badge Row */}
-            <motion.div
-              className="flex flex-wrap  gap-2 mt-2 items-center"
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <TooltipProvider>
-                {/* 🧠 DPT */}
-
-                {/* 🎭 Mood */}
-                {post?.dream?.mood && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      {post.dream?.mood && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.2 }}
-                          className="cursor-pointer flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-white text-sm backdrop-blur-md"
-                        >
-                          <span className="text-xl">
-                            {{
-                              Terrified: "😭",
-                              Sad: "😔",
-                              Neutral: "😐",
-                              Happy: "😊",
-                              Euphoric: "🤩",
-                            }[post.dream.mood] || "🌙"}
-                          </span>{" "}
-                          {post.dream.mood}
-                        </motion.div>
-                      )}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      The emotional tone you selected during dream input.
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {dptMeta && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="cursor-pointer bg-purple-600/70 text-white px-2 py-1 rounded text-sm">
-                        🧠 {dptMeta.name}
+                    <Pencil className="w-4 h-4 mr-2" />
+                    Edit Post
+                  </DropdownMenuItem>
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        <Trash2 className="w-4 h-4 mr-2 text-red-500" />
+                        <span className="text-red-500">Delete Post</span>
+                      </DropdownMenuItem>
+                    </DialogTrigger>
+                    <DialogContent onClick={(e) => e.stopPropagation()}>
+                      <DialogTitle>Delete Post</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this post? This action
+                        cannot be undone.
+                      </DialogDescription>
+                      <div className="flex justify-end gap-2 mt-4">
+                        <DialogClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <DialogClose asChild>
+                          <Button variant="destructive" onClick={handleDelete}>
+                            Delete
+                          </Button>
+                        </DialogClose>
                       </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs text-sm">
-                      {dptMeta.short_description}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+                    </DialogContent>
+                  </Dialog>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        </CardHeader>
 
-                {/* 🏞️ Setting */}
-                {post?.dream?.setting?.map((place, i) => (
-                  <Tooltip key={i}>
-                    <TooltipTrigger asChild>
-                      <div className="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white px-2 py-1 rounded text-sm cursor-pointer">
-                        {place}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>Where the dream took place.</TooltipContent>
-                  </Tooltip>
-                ))}
+        {/* Dream Image */}
+        <div className="relative aspect-[4/3] overflow-hidden">
+          <motion.img
+            src={post?.dream?.analysis?.image_url || NoImage}
+            alt="Dream visualization"
+            className="w-full h-full object-cover"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = NoImage;
+            }}
+          />
 
-                {/* 🔮 Themes */}
-                {post?.dream?.themes?.map((theme, i) => (
-                  <Tooltip key={i}>
-                    <TooltipTrigger asChild>
-                      <div className="border border-dashed border-gray-500 px-2 py-1 rounded text-sm text-white cursor-pointer">
-                        #{theme}
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Theme detected or tagged from your dream.
-                    </TooltipContent>
-                  </Tooltip>
-                ))}
-              </TooltipProvider>
-            </motion.div>
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Stats */}
-            <CardFooter className="p-0" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center gap-4 mt-2 text-white/70">
+          {/* Dream metadata overlay */}
+          <div className="absolute bottom-3 left-3 right-3">
+            <div className="flex items-center gap-2 mb-2">
+              {post?.dream?.mood && (
+                <Badge
+                  variant="secondary"
+                  className="bg-white/20 backdrop-blur-sm text-white border-0"
+                >
+                  {getMoodEmoji(post.dream.mood)} {post.dream.mood}
+                </Badge>
+              )}
+              {dptMeta && (
                 <TooltipProvider>
-                  {/* ❤️ Like */}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleLike();
-                        }}
-                        className={`flex items-center gap-1 ${
-                          liked ? "text-red-400" : ""
-                        }`}
+                      <Badge
+                        variant="secondary"
+                        className="bg-purple-500/20 backdrop-blur-sm text-white border-0"
                       >
-                        <HeartIcon liked={liked} />
-                        <span>{post.likeCount}</span>
-                      </motion.button>
+                        <Brain className="w-3 h-3 mr-1" />
+                        {dptMeta.name}
+                      </Badge>
                     </TooltipTrigger>
-                    <TooltipContent>Like this dream</TooltipContent>
-                  </Tooltip>
-
-                  {/* 💬 Comments */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        className="flex items-center gap-1"
-                      >
-                        <MessageSquare className="text-white h-5 w-5" />
-                        <span>{commentCount}</span>
-                      </motion.div>
-                    </TooltipTrigger>
-                    <TooltipContent>Comments</TooltipContent>
-                  </Tooltip>
-
-                  {/* 📌 Bookmark */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <motion.button
-                        whileTap={{ scale: 0.9 }}
-                        whileHover={{ scale: 1.05 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleBookmark();
-                        }}
-                        className={`flex items-center gap-1 ${
-                          bookmarked ? "text-yellow-400" : ""
-                        }`}
-                      >
-                        <BookmarkIcon bookmarked={bookmarked} />
-                        <span>{post.bookmarkCount}</span>
-                      </motion.button>
-                    </TooltipTrigger>
-                    <TooltipContent>Bookmark this post</TooltipContent>
+                    <TooltipContent>
+                      <p className="max-w-xs text-sm">
+                        {dptMeta.short_description}
+                      </p>
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </div>
-            </CardFooter>
-          </div>
+              )}
+            </div>
 
-          {/* Right Side (Image) */}
-          <div className="w-1/3 max-h-44">
-            <img
-              src={post?.dream?.analysis?.image_url || NoImage}
-              alt="Dream visual"
-              className="w-full max-h-44 rounded-lg object-cover transition-all duration-500 ease-in-out hover:brightness-110"
-              onError={(e) => {
-                e.currentTarget.onerror = null;
-                e.currentTarget.src = NoImage;
-              }}
-            />
+            {/* Title */}
+            {post.title && (
+              <h2 className="text-white font-bold text-lg mb-1 line-clamp-2">
+                {post.title}
+              </h2>
+            )}
           </div>
-        </Card>
-      </motion.div>
+        </div>
 
+        {/* Content */}
+        <CardContent className="p-4">
+          <AnimatePresence mode="wait">
+            {isEditing ? (
+              <motion.div
+                key="edit-mode"
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <textarea
+                  className="w-full p-3 text-sm border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  value={editedText}
+                  onChange={(e) => setEditedText(e.target.value)}
+                  rows={3}
+                  placeholder="Share your dream experience..."
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleEdit}>
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Save
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(false);
+                      setEditedText(post.caption);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="view-mode"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="space-y-3"
+              >
+                {/* Caption */}
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed line-clamp-3">
+                  {post.caption}
+                </p>
+
+                {/* Key dream elements - only show if available and limit to 2-3 */}
+                <div className="flex flex-wrap gap-2">
+                  {post?.dream?.setting?.slice(0, 2).map((place, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      <MapPin className="w-3 h-3 mr-1" />
+                      {place}
+                    </Badge>
+                  ))}
+                  {post?.dream?.themes?.slice(0, 2).map((theme, i) => (
+                    <Badge key={i} variant="outline" className="text-xs">
+                      #{theme}
+                    </Badge>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+
+        {/* Footer */}
+        <CardFooter
+          className="pt-0 pb-4 px-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-4">
+              <TooltipProvider>
+                {/* Like Button */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      whileTap={{ scale: 0.9 }}
+                      onClick={handleLike}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-full transition-colors ${
+                        liked
+                          ? "text-red-500 bg-red-50 dark:bg-red-950/20"
+                          : "text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20"
+                      }`}
+                    >
+                      <HeartIcon liked={liked} />
+                      <span className="text-sm font-medium">
+                        {post.likeCount}
+                      </span>
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {liked ? "Unlike" : "Like"} this dream
+                  </TooltipContent>
+                </Tooltip>
+
+                {/* Comments */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1 px-2 py-1 text-gray-500">
+                      <MessageSquare className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        {post.commentCount}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {post.commentCount}{" "}
+                    {post.commentCount === 1 ? "comment" : "comments"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            {/* Bookmark Button */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    whileTap={{ scale: 0.9 }}
+                    onClick={handleBookmark}
+                    className={`p-2 rounded-full transition-colors ${
+                      bookmarked
+                        ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-950/20"
+                        : "text-gray-400 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-950/20"
+                    }`}
+                  >
+                    <BookmarkIcon bookmarked={bookmarked} />
+                  </motion.button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {bookmarked ? "Remove bookmark" : "Bookmark this dream"}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </CardFooter>
+      </Card>
+
+      {/* Overlay */}
       {isOverlayOpen && (
         <PostOverlay
           post={post}
@@ -499,7 +487,7 @@ const PostCard = ({ post, updatePost, onDelete }) => {
           onDelete={onDelete}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 

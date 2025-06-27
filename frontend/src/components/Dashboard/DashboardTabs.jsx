@@ -88,96 +88,98 @@ export default function DashboardTabs() {
   }, []);
 
   return (
-    <Tabs defaultValue="insights" className="w-full px-4 py-6">
-      <TabsList className="grid grid-cols-4 w-full mb-6">
-        <TabsTrigger value="insights">🔮 Insights</TabsTrigger>
-        <TabsTrigger value="trends">📈 Trends</TabsTrigger>
-        <TabsTrigger value="explorer">💤 Explorer</TabsTrigger>
-        <TabsTrigger value="ai">🧠 AI Notes</TabsTrigger>
-      </TabsList>
+    <div className="w-full max-w-full overflow-x-hidden">
+      <Tabs defaultValue="insights" className="w-full px-4 py-6">
+        <TabsList className="grid grid-cols-4 w-full mb-6">
+          <TabsTrigger value="insights">🔮 Insights</TabsTrigger>
+          <TabsTrigger value="trends">📈 Trends</TabsTrigger>
+          <TabsTrigger value="explorer">💤 Explorer</TabsTrigger>
+          <TabsTrigger value="ai">🧠 AI Notes</TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="insights">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          <DreamLogSummary
-            loading={insightsLoading}
-            summary={insightsData}
-            hasError={insightsError}
-          />
-          <SentimentDoughnut
-            loading={insightsLoading}
-            summary={insightsData}
-            hasError={insightsError}
-          />
-        </motion.div>
-      </TabsContent>
+        <TabsContent value="insights">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <DreamLogSummary
+              loading={insightsLoading}
+              summary={insightsData}
+              hasError={insightsError}
+            />
+            <SentimentDoughnut
+              loading={insightsLoading}
+              summary={insightsData}
+              hasError={insightsError}
+            />
+          </motion.div>
+        </TabsContent>
 
-      <TabsContent value="trends">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          <MoodLineChart
-            loading={insightsLoading}
-            summary={insightsData}
-            hasError={insightsError}
-          />
-          <DreamCalendarHeatmap
-            loading={insightsLoading}
-            summary={insightsData}
-            hasError={insightsError}
-          />
-        </motion.div>
-      </TabsContent>
+        <TabsContent value="trends">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <MoodLineChart
+              loading={insightsLoading}
+              summary={insightsData}
+              hasError={insightsError}
+            />
+            <DreamCalendarHeatmap
+              loading={insightsLoading}
+              summary={insightsData}
+              hasError={insightsError}
+            />
+          </motion.div>
+        </TabsContent>
 
-      <TabsContent value="explorer">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="space-y-6"
-        >
-          <RecentDreamsWidget
-            dreams={exploreData.recentDreams}
-            loading={exploreLoading}
-            error={exploreError.recentDreams}
-          />
+        <TabsContent value="explorer">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="space-y-6"
+          >
+            <RecentDreamsWidget
+              dreams={exploreData.recentDreams}
+              loading={exploreLoading}
+              error={exploreError.recentDreams}
+            />
 
-          <Tabs defaultValue="symbols" className="mt-4">
-            <TabsList>
-              <TabsTrigger value="symbols">🔣 Symbols</TabsTrigger>
-              <TabsTrigger value="dpt">🧬 DPT</TabsTrigger>
-            </TabsList>
-            <TabsContent value="symbols">
-              <CommonSymbolsWidget
-                symbols={exploreData.commonSymbols}
-                loading={exploreLoading}
-                error={exploreError.commonSymbols}
-              />
-            </TabsContent>
-            <TabsContent value="dpt">
-              <MostFrequentDPTWidget
-                dptData={exploreData.mostFrequentDPT}
-                loading={exploreLoading}
-                error={exploreError.mostFrequentDPT}
-              />
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-      </TabsContent>
+            <Tabs defaultValue="symbols" className="mt-4">
+              <TabsList>
+                <TabsTrigger value="symbols">🔣 Symbols</TabsTrigger>
+                <TabsTrigger value="dpt">🧬 DPT</TabsTrigger>
+              </TabsList>
+              <TabsContent value="symbols">
+                <CommonSymbolsWidget
+                  symbols={exploreData.commonSymbols}
+                  loading={exploreLoading}
+                  error={exploreError.commonSymbols}
+                />
+              </TabsContent>
+              <TabsContent value="dpt">
+                <MostFrequentDPTWidget
+                  dptData={exploreData.mostFrequentDPT}
+                  loading={exploreLoading}
+                  error={exploreError.mostFrequentDPT}
+                />
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        </TabsContent>
 
-      <TabsContent value="ai">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <AIInsightsWidget
-            suggestions={exploreData.aiSuggestions}
-            loading={exploreLoading}
-            error={exploreError.aiSuggestions}
-          />
-        </motion.div>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="ai">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <AIInsightsWidget
+              suggestions={exploreData.aiSuggestions}
+              loading={exploreLoading}
+              error={exploreError.aiSuggestions}
+            />
+          </motion.div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

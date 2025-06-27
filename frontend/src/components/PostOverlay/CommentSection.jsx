@@ -114,7 +114,7 @@ export default function CommentSection({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.3 }}
-              className="absolute top-12 right-0 bg-white shadow-md rounded-lg p-2 w-40 z-20"
+              className="absolute top-12 right-0 bg-white dark:bg-black shadow-md rounded-lg p-2 w-40 z-20"
             >
               {SORT_OPTIONS.map((option) => (
                 <button
